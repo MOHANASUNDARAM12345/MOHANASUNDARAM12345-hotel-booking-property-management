@@ -1,5 +1,6 @@
 package com.stayrest.backend.config;
 
+import com.stayrest.backend.service.CustomUserDetailsService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -13,9 +14,14 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final CustomUserDetailsService customUserDetailsService;
 
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
+    public SecurityConfig(
+            JwtAuthenticationFilter jwtAuthenticationFilter,
+            CustomUserDetailsService customUserDetailsService) {
+
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.customUserDetailsService = customUserDetailsService;
     }
 
     @Bean
@@ -36,12 +42,21 @@ public class SecurityConfig {
                 )
             )
 
+            .userDetailsService(customUserDetailsService)
+
             .authorizeHttpRequests(auth -> auth
+
+                // Public APIs
                 .requestMatchers(
                     "/api/health",
                     "/api/auth/**"
                 ).permitAll()
 
+                // OWNER only APIs
+                .requestMatchers("/api/owner/**")
+                .hasRole("OWNER")
+
+                // All other APIs require login
                 .anyRequest().authenticated()
             )
 
