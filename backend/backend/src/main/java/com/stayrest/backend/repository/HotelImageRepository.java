@@ -1,0 +1,10 @@
+package com.stayrest.backend.repository;
+
+import com.stayrest.backend.entity.HotelImage;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.List;
+
+public interface HotelImageRepository extends JpaRepository<HotelImage, Integer> {
+    List<HotelImage> findByHotelId(Integer hotelId);
+}
