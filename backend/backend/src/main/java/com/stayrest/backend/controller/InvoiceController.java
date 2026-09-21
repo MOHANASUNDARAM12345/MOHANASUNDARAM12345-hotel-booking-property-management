@@ -35,15 +35,22 @@ public class InvoiceController {
     }
 
     @GetMapping("/payment/{paymentId}")
-    public ResponseEntity<Invoice> getInvoiceByPayment(@PathVariable Integer paymentId) {
-        return invoiceService.getInvoiceByPayment(paymentId)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<List<Invoice>> getInvoiceByPayment(
+            @PathVariable Integer paymentId) {
+
+        return ResponseEntity.ok(
+                invoiceService.getInvoiceByPayment(paymentId)
+        );
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Invoice> updateInvoice(@PathVariable Integer id, @RequestBody Invoice invoice) {
-        return ResponseEntity.ok(invoiceService.updateInvoice(id, invoice));
+    public ResponseEntity<Invoice> updateInvoice(
+            @PathVariable Integer id,
+            @RequestBody Invoice invoice) {
+
+        return ResponseEntity.ok(
+                invoiceService.updateInvoice(id, invoice)
+        );
     }
 
     @DeleteMapping("/{id}")

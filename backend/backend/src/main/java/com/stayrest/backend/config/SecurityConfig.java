@@ -38,13 +38,19 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
+
         config.setAllowedOriginPatterns(List.of("*"));
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+        config.setAllowedMethods(
+                List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
+        );
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
 
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        UrlBasedCorsConfigurationSource source =
+                new UrlBasedCorsConfigurationSource();
+
         source.registerCorsConfiguration("/**", config);
+
         return source;
     }
 
@@ -53,13 +59,18 @@ public class SecurityConfig {
             throws Exception {
 
         http
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .csrf(csrf -> csrf.disable())
+            .cors(cors ->
+                    cors.configurationSource(corsConfigurationSource())
+            )
+
+            .csrf(csrf ->
+                    csrf.disable()
+            )
 
             .sessionManagement(session ->
-                session.sessionCreationPolicy(
-                    SessionCreationPolicy.STATELESS
-                )
+                    session.sessionCreationPolicy(
+                            SessionCreationPolicy.STATELESS
+                    )
             )
 
             .userDetailsService(customUserDetailsService)
@@ -68,33 +79,39 @@ public class SecurityConfig {
 
                 // Public APIs and Swagger
                 .requestMatchers(
-                    "/api/health",
-                    "/api/auth/**",
-                    "/v3/api-docs/**",
-                    "/swagger-ui/**",
-                    "/swagger-ui.html"
+                        "/api/health",
+                        "/api/auth/**",
+                        "/v3/api-docs/**",
+                        "/swagger-ui/**",
+                        "/swagger-ui.html"
                 ).permitAll()
 
-                // Public GET endpoints for browsing hotels, rooms, reviews, services, coupons
-                .requestMatchers(HttpMethod.GET,
-                    "/api/hotels/**",
-                    "/api/rooms/**",
-                    "/api/reviews/**",
-                    "/api/coupons/**",
-                    "/api/services/**"
+                // Public GET APIs
+                .requestMatchers(
+                        HttpMethod.GET,
+                        "/api/hotels/**",
+                        "/api/rooms/**",
+                        "/api/reviews/**",
+                        "/api/coupons/**",
+                        "/api/services/**"
                 ).permitAll()
+
+                // Favorites - logged-in users
+                .requestMatchers("/api/favorites/**")
+                .authenticated()
 
                 // OWNER only APIs
                 .requestMatchers("/api/owner/**")
                 .hasRole("OWNER")
 
                 // All other APIs require login
-                .anyRequest().authenticated()
+                .anyRequest()
+                .authenticated()
             )
 
             .addFilterBefore(
-                jwtAuthenticationFilter,
-                UsernamePasswordAuthenticationFilter.class
+                    jwtAuthenticationFilter,
+                    UsernamePasswordAuthenticationFilter.class
             );
 
         return http.build();

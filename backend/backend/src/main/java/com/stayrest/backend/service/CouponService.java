@@ -16,35 +16,54 @@ public class CouponService {
         this.couponRepository = couponRepository;
     }
 
+    // CREATE COUPON
     public Coupon createCoupon(Coupon coupon) {
+
         if (coupon.getCode() == null || coupon.getCode().isBlank()) {
             throw new IllegalArgumentException("Coupon code cannot be empty");
         }
+
         if (couponRepository.existsByCode(coupon.getCode())) {
-            throw new IllegalArgumentException("Coupon with code '" + coupon.getCode() + "' already exists");
+            throw new IllegalArgumentException(
+                    "Coupon with code '" + coupon.getCode() + "' already exists"
+            );
         }
+
         if (coupon.getIsActive() == null) {
             coupon.setIsActive(true);
         }
+
         return couponRepository.save(coupon);
     }
 
+    // GET ALL COUPONS
     public List<Coupon> getAllCoupons() {
         return couponRepository.findAll();
     }
 
+    // GET COUPON BY ID
     public Optional<Coupon> getCouponById(Integer id) {
         return couponRepository.findById(id);
     }
 
+    // GET COUPON BY CODE
     public Optional<Coupon> getCouponByCode(String code) {
         return couponRepository.findByCode(code);
     }
 
+    // UPDATE COUPON
     public Coupon updateCoupon(Integer id, Coupon updated) {
-        Coupon existing = couponRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Coupon not found with ID: " + id));
 
+        Coupon existing = couponRepository.findById(id)
+                .orElseThrow(() ->
+                        new RuntimeException("Coupon not found with ID: " + id)
+                );
+
+        if (updated.getCode() == null || updated.getCode().isBlank()) {
+            throw new IllegalArgumentException("Coupon code cannot be empty");
+        }
+
+        existing.setCode(updated.getCode());
         existing.setDiscountPercentage(updated.getDiscountPercentage());
         existing.setMaxDiscount(updated.getMaxDiscount());
         existing.setMinBookingAmount(updated.getMinBookingAmount());
@@ -54,6 +73,7 @@ public class CouponService {
         return couponRepository.save(existing);
     }
 
+    // DELETE COUPON
     public void deleteCoupon(Integer id) {
         couponRepository.deleteById(id);
     }

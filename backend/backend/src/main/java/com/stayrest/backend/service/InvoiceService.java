@@ -18,9 +18,13 @@ public class InvoiceService {
     }
 
     public Invoice createInvoice(Invoice invoice) {
+
         if (invoice.getInvoiceNumber() == null || invoice.getInvoiceNumber().isBlank()) {
-            invoice.setInvoiceNumber("INV-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
+            invoice.setInvoiceNumber(
+                    "INV-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase()
+            );
         }
+
         return invoiceRepository.save(invoice);
     }
 
@@ -32,16 +36,21 @@ public class InvoiceService {
         return invoiceRepository.findById(id);
     }
 
-    public Optional<Invoice> getInvoiceByPayment(Integer paymentId) {
+    public List<Invoice> getInvoiceByPayment(Integer paymentId) {
         return invoiceRepository.findByPaymentId(paymentId);
     }
 
     public Invoice updateInvoice(Integer id, Invoice updated) {
+
         Invoice existing = invoiceRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Invoice not found with ID: " + id));
+                .orElseThrow(() ->
+                        new RuntimeException("Invoice not found with ID: " + id)
+                );
 
         existing.setTotalAmount(updated.getTotalAmount());
-        if (updated.getInvoiceNumber() != null) {
+
+        if (updated.getInvoiceNumber() != null
+                && !updated.getInvoiceNumber().isBlank()) {
             existing.setInvoiceNumber(updated.getInvoiceNumber());
         }
 
