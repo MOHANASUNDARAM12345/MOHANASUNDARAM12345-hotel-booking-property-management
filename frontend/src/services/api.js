@@ -314,19 +314,36 @@ export const api = {
     return handleResponse(res);
   },
 
-  createService: async (data) => {
-    const res = await fetch(`${API_BASE_URL}/owner/services`, {
+  // Smart Features & AI Differentiating Engines
+  getSmartStayRecommendations: async (requestData) => {
+    const res = await fetch(`${API_BASE_URL}/smart-stay/recommend`, {
       method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify(data),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(requestData),
     });
     return handleResponse(res);
   },
-  deleteService: async (id) => {
-    const res = await fetch(`${API_BASE_URL}/owner/services/${id}`, {
-      method: 'DELETE',
+
+  askGuestAssistant: async (queryData) => {
+    const res = await fetch(`${API_BASE_URL}/assistant/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(queryData),
+    });
+    return handleResponse(res);
+  },
+
+  getOwnerAnalytics: async (ownerId) => {
+    const url = ownerId ? `${API_BASE_URL}/owner/analytics?ownerId=${ownerId}` : `${API_BASE_URL}/owner/analytics`;
+    const res = await fetch(url, { headers: getHeaders() });
+    return handleResponse(res);
+  },
+
+  getCancellationRefundEstimate: async (bookingId) => {
+    const res = await fetch(`${API_BASE_URL}/bookings/${bookingId}/cancellation-refund-estimate`, {
       headers: getHeaders(),
     });
     return handleResponse(res);
   },
 };
+

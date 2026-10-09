@@ -23,18 +23,19 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = (authData, userDetail) => {
+    const userId = authData.userId || (userDetail && userDetail.userId);
     localStorage.setItem('token', authData.token);
     localStorage.setItem('email', authData.email);
     localStorage.setItem('role', authData.role);
-    if (userDetail && userDetail.userId) {
-      localStorage.setItem('userId', userDetail.userId);
+    if (userId) {
+      localStorage.setItem('userId', userId);
     }
 
     setToken(authData.token);
     setUser({
       email: authData.email,
       role: authData.role,
-      userId: userDetail ? userDetail.userId : null,
+      userId: userId ? parseInt(userId) : null,
     });
   };
 
