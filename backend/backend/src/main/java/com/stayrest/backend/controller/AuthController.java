@@ -1,7 +1,9 @@
 package com.stayrest.backend.controller;
 
+import com.stayrest.backend.UserResponse;
 import com.stayrest.backend.entity.User;
 import com.stayrest.backend.service.AuthService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,7 +18,15 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<User> register(@RequestBody User user) {
-        return ResponseEntity.ok(authService.register(user));
+    public ResponseEntity<UserResponse> register(@Valid @RequestBody User user) {
+        User registeredUser = authService.register(user);
+        UserResponse response = new UserResponse(
+                registeredUser.getUserId(),
+                registeredUser.getName(),
+                registeredUser.getEmail(),
+                registeredUser.getPhone(),
+                registeredUser.getRole()
+        );
+        return ResponseEntity.ok(response);
     }
 }

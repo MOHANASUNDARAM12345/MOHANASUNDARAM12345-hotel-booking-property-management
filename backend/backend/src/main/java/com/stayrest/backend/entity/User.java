@@ -6,6 +6,10 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 
 import java.time.LocalDateTime;
 
@@ -19,18 +23,27 @@ public class User {
     private Integer userId;
 
     @Column(name = "name", nullable = false, length = 100)
+    @NotBlank
+    @Size(max = 100)
     private String name;
 
     @Column(name = "email", nullable = false, unique = true, length = 100)
+    @NotBlank
+    @Email
+    @Size(max = 100)
     private String email;
 
     @Column(name = "password", nullable = false, length = 255)
+    @NotBlank
+    @Size(min = 8, max = 72)
     private String password;
 
     @Column(name = "phone", length = 15)
+    @Size(max = 15)
     private String phone;
 
     @Column(name = "role", length = 20)
+    @Pattern(regexp = "(?i)USER|OWNER")
     private String role;
 
     @Column(name = "created_at")

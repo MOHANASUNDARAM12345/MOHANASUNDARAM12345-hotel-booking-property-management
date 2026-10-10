@@ -3,6 +3,7 @@ package com.stayrest.backend.controller;
 import com.stayrest.backend.UserResponse;
 import com.stayrest.backend.entity.User;
 import com.stayrest.backend.service.UserService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,7 +18,7 @@ public class UserController {
     }
 
     @PostMapping
-    public ResponseEntity<UserResponse> createUser(@RequestBody User user) {
+    public ResponseEntity<UserResponse> createUser(@Valid @RequestBody User user) {
         if (user.getName() == null || user.getName().trim().isEmpty() ||
             user.getEmail() == null || user.getEmail().trim().isEmpty() ||
             user.getPassword() == null || user.getPassword().trim().isEmpty()) {

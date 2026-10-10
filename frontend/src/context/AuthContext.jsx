@@ -3,23 +3,32 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [token, setToken] = useState(null);
-
-  useEffect(() => {
+  const [user, setUser] = useState(() => {
     const savedToken = localStorage.getItem('token');
     const savedEmail = localStorage.getItem('email');
-    const savedRole = localStorage.getItem('role');
-    const savedUserId = localStorage.getItem('userId');
+    if (!savedToken || !savedEmail) return null;
 
-    if (savedToken && savedEmail) {
-      setToken(savedToken);
-      setUser({
-        email: savedEmail,
-        role: savedRole || 'USER',
-        userId: savedUserId ? parseInt(savedUserId) : null,
-      });
-    }
+    const savedUserId = localStorage.getItem('userId');
+    return {
+      email: savedEmail,
+      role: localStorage.getItem('role') || 'USER',
+      userId: savedUserId ? Number.parseInt(savedUserId, 10) : null,
+    };
+  });
+  const [token, setToken] = useState(() => localStorage.getItem('token'));
+
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      localStorage.removeItem('token');
+      localStorage.removeItem('email');
+      localStorage.removeItem('role');
+      localStorage.removeItem('userId');
+      setToken(null);
+      setUser(null);
+    };
+
+    window.addEventListener('auth:unauthorized', handleUnauthorized);
+    return () => window.removeEventListener('auth:unauthorized', handleUnauthorized);
   }, []);
 
   const login = (authData, userDetail) => {

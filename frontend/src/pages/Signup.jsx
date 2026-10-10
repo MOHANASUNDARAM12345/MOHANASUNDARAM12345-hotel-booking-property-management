@@ -104,6 +104,7 @@ export const Signup = () => {
               <input
                 type="text"
                 required
+                maxLength={100}
                 placeholder="John Doe"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -121,6 +122,7 @@ export const Signup = () => {
               <input
                 type="email"
                 required
+                maxLength={100}
                 placeholder="john@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -137,6 +139,7 @@ export const Signup = () => {
               <Phone size={18} color="#94a3b8" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
               <input
                 type="text"
+                maxLength={15}
                 placeholder="+91 9876543210"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
@@ -154,7 +157,10 @@ export const Signup = () => {
               <input
                 type="password"
                 required
-                placeholder="Minimum 6 characters"
+                minLength={8}
+                maxLength={72}
+                autoComplete="new-password"
+                placeholder="At least 8 characters"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 style={{ width: '100%', padding: '0.7rem 0.7rem 0.7rem 2.4rem', border: '1px solid #cbd5e1', borderRadius: '10px', fontSize: '0.9rem' }}

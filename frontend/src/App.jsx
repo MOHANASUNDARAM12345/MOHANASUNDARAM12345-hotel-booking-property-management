@@ -1,6 +1,7 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { useAuth } from './context/AuthContext';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
 
@@ -17,6 +18,13 @@ import { Favorites } from './pages/Favorites';
 import { Notifications } from './pages/Notifications';
 import { OwnerDashboard } from './pages/OwnerDashboard';
 
+function ProtectedRoute({ children, ownerOnly = false }) {
+  const { user, isOwner } = useAuth();
+  if (!user) return <Navigate to="/login" replace />;
+  if (ownerOnly && !isOwner) return <Navigate to="/" replace />;
+  return children;
+}
+
 export function App() {
   return (
     <AuthProvider>
@@ -31,12 +39,12 @@ export function App() {
               <Route path="/hotels" element={<Hotels />} />
               <Route path="/hotels/:id" element={<HotelDetails />} />
               <Route path="/rooms" element={<Rooms />} />
-              <Route path="/my-bookings" element={<MyBookings />} />
-              <Route path="/payment" element={<PaymentPage />} />
-              <Route path="/invoice" element={<InvoicePage />} />
-              <Route path="/favorites" element={<Favorites />} />
-              <Route path="/notifications" element={<Notifications />} />
-              <Route path="/owner" element={<OwnerDashboard />} />
+              <Route path="/my-bookings" element={<ProtectedRoute><MyBookings /></ProtectedRoute>} />
+              <Route path="/payment" element={<ProtectedRoute><PaymentPage /></ProtectedRoute>} />
+              <Route path="/invoice" element={<ProtectedRoute><InvoicePage /></ProtectedRoute>} />
+              <Route path="/favorites" element={<ProtectedRoute><Favorites /></ProtectedRoute>} />
+              <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
+              <Route path="/owner" element={<ProtectedRoute ownerOnly><OwnerDashboard /></ProtectedRoute>} />
             </Routes>
           </main>
           <Footer />

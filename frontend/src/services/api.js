@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:8080/api';
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api').replace(/\/+$/, '');
 
 const getHeaders = () => {
   const token = localStorage.getItem('token');
@@ -13,6 +13,9 @@ const getHeaders = () => {
 
 const handleResponse = async (response) => {
   if (!response.ok) {
+    if (response.status === 401) {
+      window.dispatchEvent(new Event('auth:unauthorized'));
+    }
     let errorMessage = 'An error occurred';
     try {
       const errorData = await response.json();
