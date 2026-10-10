@@ -6,8 +6,11 @@ import com.stayrest.backend.repository.BookingRepository;
 import com.stayrest.backend.repository.RoomRepository;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -81,6 +84,48 @@ public class BookingService {
         bookingRepository.deleteById(bookingId);
     }
 
+    public Map<String, Object> calculateRefundEstimate(Integer bookingId) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new RuntimeException("Booking not found with ID: " + bookingId));
+
+        double totalAmount = booking.getTotalAmount() != null ? booking.getTotalAmount() : 0.0;
+        LocalDate today = LocalDate.now();
+        LocalDate checkIn = booking.getCheckInDate() != null ? booking.getCheckInDate() : today;
+
+        long daysBeforeCheckIn = ChronoUnit.DAYS.between(today, checkIn);
+        double refundPercentage = 0.0;
+        String policyExplanation = "";
+
+        if (daysBeforeCheckIn >= 7) {
+            refundPercentage = 100.0;
+            policyExplanation = "Eligible for 100% full refund (Cancelled 7+ days before check-in).";
+        } else if (daysBeforeCheckIn >= 3) {
+            refundPercentage = 75.0;
+            policyExplanation = "Eligible for 75% refund with 25% cancellation fee (Cancelled 3-6 days before check-in).";
+        } else if (daysBeforeCheckIn >= 1) {
+            refundPercentage = 50.0;
+            policyExplanation = "Eligible for 50% refund with 50% cancellation fee (Cancelled 1-2 days before check-in).";
+        } else {
+            refundPercentage = 0.0;
+            policyExplanation = "Non-refundable (Cancelled on check-in day or after).";
+        }
+
+        double refundAmount = (totalAmount * refundPercentage) / 100.0;
+        double cancellationFee = totalAmount - refundAmount;
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("bookingId", bookingId);
+        result.put("totalAmount", totalAmount);
+        result.put("daysBeforeCheckIn", daysBeforeCheckIn);
+        result.put("refundPercentage", refundPercentage);
+        result.put("refundAmount", refundAmount);
+        result.put("cancellationFee", cancellationFee);
+        result.put("policyExplanation", policyExplanation);
+        result.put("status", booking.getStatus());
+
+        return result;
+    }
+
     private void validateBooking(Booking booking, Integer currentBookingId) {
         if (booking.getCheckInDate() == null || booking.getCheckOutDate() == null) {
             throw new IllegalArgumentException("Check-in and check-out dates are required");
@@ -92,6 +137,21 @@ public class BookingService {
 
         if (booking.getGuests() == null || booking.getGuests() <= 0) {
             throw new IllegalArgumentException("Guests count must be greater than 0");
+        }
+
+        // Room Operational Status and Capacity Validation
+        if (booking.getRoomId() != null) {
+            Optional<Room> roomOpt = roomRepository.findById(booking.getRoomId());
+            if (roomOpt.isPresent()) {
+                Room room = roomOpt.get();
+                if (room.getStatus() != null &&
+                    ("MAINTENANCE".equalsIgnoreCase(room.getStatus()) || "OUT_OF_SERVICE".equalsIgnoreCase(room.getStatus()))) {
+                    throw new IllegalArgumentException("Room " + room.getRoomNumber() + " is currently under maintenance and cannot be booked");
+                }
+                if (room.getCapacity() != null && booking.getGuests() > room.getCapacity()) {
+                    throw new IllegalArgumentException("Selected room capacity is " + room.getCapacity() + " guests, but " + booking.getGuests() + " guests requested");
+                }
+            }
         }
 
         // Check for double booking / overlapping dates

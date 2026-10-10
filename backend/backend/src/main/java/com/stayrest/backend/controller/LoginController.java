@@ -25,6 +25,12 @@ public class LoginController {
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
+        if (loginRequest.getEmail() == null || loginRequest.getEmail().trim().isEmpty() ||
+            loginRequest.getPassword() == null || loginRequest.getPassword().trim().isEmpty()) {
+            return ResponseEntity
+                    .status(400)
+                    .body(Map.of("message", "Email and password are required"));
+        }
 
         User user = userService.getUserByEmail(loginRequest.getEmail())
                 .orElse(null);
@@ -32,7 +38,7 @@ public class LoginController {
         if (user == null) {
             return ResponseEntity
                     .status(401)
-                    .body("Invalid email or password");
+                    .body(Map.of("message", "Invalid email or password"));
         }
 
         boolean passwordCorrect = userService.checkPassword(
@@ -43,7 +49,7 @@ public class LoginController {
         if (!passwordCorrect) {
             return ResponseEntity
                     .status(401)
-                    .body("Invalid email or password");
+                    .body(Map.of("message", "Invalid email or password"));
         }
 
         String token = jwtService.generateToken(user.getEmail());
@@ -54,6 +60,7 @@ public class LoginController {
         response.put("token", token);
         response.put("email", user.getEmail());
         response.put("role", user.getRole());
+        response.put("userId", user.getUserId());
 
         return ResponseEntity.ok(response);
     }

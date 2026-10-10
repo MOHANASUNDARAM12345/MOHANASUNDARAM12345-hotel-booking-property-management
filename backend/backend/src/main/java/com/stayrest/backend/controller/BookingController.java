@@ -46,6 +46,11 @@ public class BookingController {
         return ResponseEntity.ok(bookingService.getBookingsByRoom(roomId));
     }
 
+    @GetMapping("/{id}/cancellation-refund-estimate")
+    public ResponseEntity<Object> getCancellationRefundEstimate(@PathVariable Integer id) {
+        return ResponseEntity.ok(bookingService.calculateRefundEstimate(id));
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<Booking> updateBooking(
             @PathVariable Integer id,

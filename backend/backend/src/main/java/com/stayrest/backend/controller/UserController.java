@@ -18,6 +18,11 @@ public class UserController {
 
     @PostMapping
     public ResponseEntity<UserResponse> createUser(@RequestBody User user) {
+        if (user.getName() == null || user.getName().trim().isEmpty() ||
+            user.getEmail() == null || user.getEmail().trim().isEmpty() ||
+            user.getPassword() == null || user.getPassword().trim().isEmpty()) {
+            throw new IllegalArgumentException("Name, email, and password are required fields");
+        }
 
         User savedUser = userService.saveUser(user);
 

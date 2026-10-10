@@ -20,10 +20,21 @@ public class UserService {
     }
 
     public User saveUser(User user) {
+        if (user.getEmail() != null && emailExists(user.getEmail())) {
+            throw new IllegalArgumentException("Email is already registered");
+        }
 
-        user.setPassword(
-                passwordEncoder.encode(user.getPassword())
-        );
+        if (user.getRole() == null || user.getRole().trim().isEmpty()) {
+            user.setRole("USER");
+        }
+
+        if (user.getCreatedAt() == null) {
+            user.setCreatedAt(java.time.LocalDateTime.now());
+        }
+
+        if (user.getPassword() != null) {
+            user.setPassword(passwordEncoder.encode(user.getPassword()));
+        }
 
         return userRepository.save(user);
     }
@@ -39,7 +50,9 @@ public class UserService {
     }
 
     public boolean checkPassword(String rawPassword, String encodedPassword) {
-
-        return passwordEncoder.matches(rawPassword, encodedPassword);
+        if (encodedPassword != null && (encodedPassword.startsWith("$2a$") || encodedPassword.startsWith("$2b$") || encodedPassword.startsWith("$2y$"))) {
+            return passwordEncoder.matches(rawPassword, encodedPassword);
+        }
+        return rawPassword != null && rawPassword.equals(encodedPassword);
     }
 }

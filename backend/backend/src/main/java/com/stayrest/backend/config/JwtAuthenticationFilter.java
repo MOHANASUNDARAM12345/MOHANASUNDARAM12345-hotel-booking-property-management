@@ -44,6 +44,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String authorizationHeader =
                 request.getHeader("Authorization");
 
+        // No JWT token
         if (authorizationHeader == null ||
                 !authorizationHeader.startsWith("Bearer ")) {
 
@@ -55,21 +56,26 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         try {
 
+            // Create secret key
             SecretKey key = Keys.hmacShaKeyFor(
                     secret.getBytes(StandardCharsets.UTF_8)
             );
 
+            // Validate and decode JWT
             Claims claims = Jwts.parser()
                     .verifyWith(key)
                     .build()
                     .parseSignedClaims(token)
                     .getPayload();
 
+            // Get email from JWT subject
             String email = claims.getSubject();
 
+            // Load user from database
             UserDetails userDetails =
                     customUserDetailsService.loadUserByUsername(email);
 
+            // Create authentication object
             UsernamePasswordAuthenticationToken authentication =
                     new UsernamePasswordAuthenticationToken(
                             userDetails,
@@ -77,18 +83,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                             userDetails.getAuthorities()
                     );
 
+            // Add request details
             authentication.setDetails(
                     new WebAuthenticationDetailsSource()
                             .buildDetails(request)
             );
 
+            // Set authenticated user
             SecurityContextHolder
                     .getContext()
                     .setAuthentication(authentication);
 
         } catch (Exception e) {
 
-            System.out.println("Invalid JWT token");
+            System.out.println("Invalid JWT token:");
+            e.printStackTrace();
 
         }
 
