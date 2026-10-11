@@ -5,6 +5,7 @@ import com.stayrest.backend.entity.Room;
 import com.stayrest.backend.repository.BookingRepository;
 import com.stayrest.backend.repository.RoomRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -28,14 +29,17 @@ public class RoomService {
         return roomRepository.save(room);
     }
 
+    @Transactional(readOnly = true)
     public List<Room> getAllRooms() {
         return roomRepository.findAll();
     }
 
+    @Transactional(readOnly = true)
     public Optional<Room> getRoomById(Integer roomId) {
         return roomRepository.findById(roomId);
     }
 
+    @Transactional(readOnly = true)
     public List<Room> getRoomsByHotel(Integer hotelId) {
         return roomRepository.findByHotelId(hotelId);
     }
@@ -50,6 +54,7 @@ public class RoomService {
      * This check is done server-side on the database, so the frontend can never
      * overstate availability.
      */
+    @Transactional(readOnly = true)
     public List<Room> getAvailableRoomsByHotel(Integer hotelId, LocalDate checkIn, LocalDate checkOut, Integer guests) {
         LocalDate effectiveCheckIn = checkIn != null ? checkIn : LocalDate.now();
         LocalDate effectiveCheckOut = checkOut != null ? checkOut : effectiveCheckIn.plusDays(1);

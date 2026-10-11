@@ -3,6 +3,7 @@ package com.stayrest.backend.service;
 import com.stayrest.backend.entity.Hotel;
 import com.stayrest.backend.repository.HotelRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -22,16 +23,19 @@ public class HotelService {
     }
 
     // Get all hotels
+    @Transactional(readOnly = true)
     public List<Hotel> getAllHotels() {
         return hotelRepository.findAll();
     }
 
     // Get hotel by ID
+    @Transactional(readOnly = true)
     public Optional<Hotel> getHotelById(Integer hotelId) {
         return hotelRepository.findById(hotelId);
     }
 
     // Get hotels by property
+    @Transactional(readOnly = true)
     public List<Hotel> getHotelsByProperty(Integer propertyId) {
         return hotelRepository.findByPropertyId(propertyId);
     }

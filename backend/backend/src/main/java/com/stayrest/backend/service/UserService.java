@@ -4,6 +4,7 @@ import com.stayrest.backend.entity.User;
 import com.stayrest.backend.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
@@ -39,16 +40,19 @@ public class UserService {
         return userRepository.save(user);
     }
 
+    @Transactional(readOnly = true)
     public Optional<User> getUserByEmail(String email) {
 
         return userRepository.findByEmail(email);
     }
 
+    @Transactional(readOnly = true)
     public boolean emailExists(String email) {
 
         return userRepository.existsByEmail(email);
     }
 
+    @Transactional(readOnly = true)
     public boolean checkPassword(String rawPassword, String encodedPassword) {
         if (encodedPassword != null && (encodedPassword.startsWith("$2a$") || encodedPassword.startsWith("$2b$") || encodedPassword.startsWith("$2y$"))) {
             return passwordEncoder.matches(rawPassword, encodedPassword);

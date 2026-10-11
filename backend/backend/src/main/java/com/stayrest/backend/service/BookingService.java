@@ -47,18 +47,22 @@ public class BookingService {
         return saved;
     }
 
+    @Transactional(readOnly = true)
     public List<Booking> getAllBookings() {
         return bookingRepository.findAll();
     }
 
+    @Transactional(readOnly = true)
     public Optional<Booking> getBookingById(Integer bookingId) {
         return bookingRepository.findById(bookingId);
     }
 
+    @Transactional(readOnly = true)
     public List<Booking> getBookingsByUser(Integer userId) {
         return bookingRepository.findByUserId(userId);
     }
 
+    @Transactional(readOnly = true)
     public List<Booking> getBookingsByRoom(Integer roomId) {
         return bookingRepository.findByRoomId(roomId);
     }
@@ -163,6 +167,7 @@ public class BookingService {
         });
     }
 
+    @Transactional(readOnly = true)
     public Map<String, Object> calculateRefundEstimate(Integer bookingId) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new RuntimeException("Booking not found with ID: " + bookingId));
