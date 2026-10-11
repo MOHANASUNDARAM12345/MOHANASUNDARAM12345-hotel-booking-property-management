@@ -21,26 +21,66 @@ const getHeaders = () => {
   return headers;
 };
 
+// A Fetch Response body can only be consumed once. We therefore read it as
+// text exactly once, then decide how to interpret it. Reading it twice (e.g.
+// response.json() followed by response.text()) throws
+// "Failed to execute 'text' on 'Response': body stream already read".
 const handleResponse = async (response) => {
+  const contentType = response.headers.get('content-type') || '';
+
+  let rawBody = '';
+  try {
+    rawBody = await response.text();
+  } catch {
+    rawBody = '';
+  }
+
+  let data = null;
+  let isJson = false;
+  if (rawBody.length > 0) {
+    try {
+      data = JSON.parse(rawBody);
+      isJson = true;
+    } catch {
+      isJson = false;
+    }
+  }
+
   if (!response.ok) {
     if (response.status === 401) {
       window.dispatchEvent(new Event('auth:unauthorized'));
     }
-    let errorMessage = 'An error occurred';
-    try {
-      const errorData = await response.json();
-      errorMessage = errorData.message || errorData.error || JSON.stringify(errorData);
-    } catch {
-      const text = await response.text();
-      errorMessage = text || `HTTP ${response.status}: ${response.statusText}`;
+
+    let errorMessage = '';
+    if (isJson && data && typeof data === 'object') {
+      errorMessage =
+        data.message ||
+        data.error ||
+        (data.fieldErrors ? JSON.stringify(data.fieldErrors) : '') ||
+        JSON.stringify(data);
+    } else if (rawBody) {
+      errorMessage = rawBody;
     }
+
+    if (!errorMessage) {
+      errorMessage =
+        response.status === 403
+          ? 'You are not authorized to perform this action. Please sign in and try again.'
+          : `HTTP ${response.status}: ${response.statusText || 'Request failed'}`;
+    }
+
     throw new Error(errorMessage);
   }
-  const contentType = response.headers.get('content-type');
-  if (contentType && contentType.includes('application/json')) {
-    return await response.json();
+
+  if (isJson) {
+    return data;
   }
-  return await response.text();
+
+  if (contentType.includes('application/json') || contentType.includes('+json')) {
+    return null;
+  }
+
+  return rawBody;
 };
 
 const safeFetch = async (url, options) => {
