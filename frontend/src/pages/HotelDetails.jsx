@@ -364,10 +364,11 @@ export const HotelDetails = () => {
             }}>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '1rem', alignItems: 'flex-end' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '0.3rem' }}>
+                  <label htmlFor="availabilityCheckIn" style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '0.3rem' }}>
                     Check-in Date
                   </label>
                   <input
+                    id="availabilityCheckIn"
                     type="date"
                     min={today}
                     required
@@ -377,10 +378,11 @@ export const HotelDetails = () => {
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '0.3rem' }}>
+                  <label htmlFor="availabilityCheckOut" style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '0.3rem' }}>
                     Check-out Date
                   </label>
                   <input
+                    id="availabilityCheckOut"
                     type="date"
                     min={checkInDate || today}
                     required
@@ -390,10 +392,11 @@ export const HotelDetails = () => {
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '0.3rem' }}>
+                  <label htmlFor="availabilityGuests" style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '0.3rem' }}>
                     Guests
                   </label>
                   <input
+                    id="availabilityGuests"
                     type="number"
                     min="1"
                     max="10"
@@ -535,6 +538,7 @@ export const HotelDetails = () => {
                   <div>
                     <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#475569' }}>Rating (1 to 5 stars)</label>
                     <select
+                      aria-label="Star rating"
                       value={newRating}
                       onChange={(e) => setNewRating(e.target.value)}
                       style={{ display: 'block', marginTop: '0.25rem', padding: '0.4rem', borderRadius: '8px', border: '1px solid #cbd5e1' }}
@@ -550,6 +554,7 @@ export const HotelDetails = () => {
                 <textarea
                   required
                   rows="3"
+                  aria-label="Your review comment"
                   placeholder="Share your experience staying at this hotel..."
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
@@ -661,10 +666,11 @@ export const HotelDetails = () => {
             <form onSubmit={handleBookingSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '0.3rem' }}>
+                  <label htmlFor="bookingCheckIn" style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '0.3rem' }}>
                     Check-in Date
                   </label>
                   <input
+                    id="bookingCheckIn"
                     type="date"
                     min={today}
                     required
@@ -674,10 +680,11 @@ export const HotelDetails = () => {
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '0.3rem' }}>
+                  <label htmlFor="bookingCheckOut" style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '0.3rem' }}>
                     Check-out Date
                   </label>
                   <input
+                    id="bookingCheckOut"
                     type="date"
                     min={checkInDate || today}
                     required
@@ -689,10 +696,11 @@ export const HotelDetails = () => {
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '0.3rem' }}>
+                <label htmlFor="bookingGuests" style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '0.3rem' }}>
                   Number of Guests
                 </label>
                 <input
+                  id="bookingGuests"
                   type="number"
                   min="1"
                   max={selectedRoom.capacity || 10}
