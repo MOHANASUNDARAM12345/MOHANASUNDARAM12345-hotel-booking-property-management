@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -74,7 +75,12 @@ public class RoomService {
                 .filter(room -> !bookedRoomIds.contains(room.getRoomId()))
                 .filter(room -> guests == null || guests <= 0 || room.getCapacity() == null
                         || room.getCapacity() >= guests)
+                .sorted(Comparator.comparingDouble(RoomService::roomPriceForOrdering))
                 .collect(Collectors.toList());
+    }
+
+    private static double roomPriceForOrdering(Room room) {
+        return room.getPrice() != null ? room.getPrice() : Double.MAX_VALUE;
     }
 
     private boolean isOutOfService(String status) {

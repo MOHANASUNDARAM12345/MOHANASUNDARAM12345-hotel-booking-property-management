@@ -37,13 +37,17 @@ class RoomServiceTest {
     private final LocalDate checkOut = LocalDate.now().plusDays(3);
 
     private Room room(int id, String status, int capacity) {
+        return room(id, status, capacity, 1000.0);
+    }
+
+    private Room room(int id, String status, int capacity, double price) {
         Room room = new Room();
         room.setRoomId(id);
         room.setHotelId(1);
         room.setRoomNumber(String.valueOf(id));
         room.setStatus(status);
         room.setCapacity(capacity);
-        room.setPrice(1000.0);
+        room.setPrice(price);
         return room;
     }
 
@@ -104,5 +108,18 @@ class RoomServiceTest {
     void rejectsCheckInOnOrAfterCheckOut() {
         assertThrows(IllegalArgumentException.class,
                 () -> roomService.getAvailableRoomsByHotel(1, checkOut, checkIn, 1));
+    }
+
+    @Test
+    void sortsAvailableRoomsByPriceAscending() {
+        when(roomRepository.findByHotelId(1))
+                .thenReturn(List.of(room(1, "AVAILABLE", 2, 3000.0), room(2, "AVAILABLE", 2, 1000.0), room(3, "AVAILABLE", 2, 2000.0)));
+
+        List<Room> available = roomService.getAvailableRoomsByHotel(1, checkIn, checkOut, 1);
+
+        assertEquals(3, available.size());
+        assertEquals(2, available.get(0).getRoomId());
+        assertEquals(3, available.get(1).getRoomId());
+        assertEquals(1, available.get(2).getRoomId());
     }
 }
