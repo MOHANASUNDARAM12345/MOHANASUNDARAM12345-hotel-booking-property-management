@@ -2,6 +2,7 @@ package com.stayrest.backend.controller;
 
 import com.stayrest.backend.entity.Hotel;
 import com.stayrest.backend.service.HotelService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,7 +21,7 @@ public class HotelController {
     // Create hotel
     @PostMapping
     public ResponseEntity<Hotel> createHotel(
-            @RequestBody Hotel hotel) {
+            @Valid @RequestBody Hotel hotel) {
 
         Hotel savedHotel = hotelService.createHotel(hotel);
 
@@ -60,7 +61,7 @@ public class HotelController {
     @PutMapping("/{id}")
     public ResponseEntity<Hotel> updateHotel(
             @PathVariable Integer id,
-            @RequestBody Hotel hotel) {
+            @Valid @RequestBody Hotel hotel) {
 
         return ResponseEntity.ok(
                 hotelService.updateHotel(id, hotel)

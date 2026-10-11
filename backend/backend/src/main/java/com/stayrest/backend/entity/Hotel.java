@@ -1,6 +1,12 @@
 package com.stayrest.backend.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
+import jakarta.validation.constraints.Size;
 
 @Entity
 @Table(name = "hotels")
@@ -11,24 +17,32 @@ public class Hotel {
     @Column(name = "hotel_id")
     private Integer hotelId;
 
+    @NotNull
     @Column(name = "property_id", nullable = false)
     private Integer propertyId;
 
+    @NotBlank
+    @Size(max = 100)
     @Column(name = "hotel_name", nullable = false, length = 100)
     private String hotelName;
 
+    @Size(max = 100)
     @Column(name = "location", length = 100)
     private String location;
 
     @Column(name = "description")
     private String description;
 
+    @DecimalMin("0.0")
+    @DecimalMax("5.0")
     @Column(name = "rating")
     private Double rating;
 
+    @PositiveOrZero
     @Column(name = "price")
     private Double price;
 
+    @Size(max = 50)
     @Column(name = "category", length = 50)
     private String category;
 
