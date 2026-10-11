@@ -51,13 +51,13 @@ non-cancelled, non-checked-out, non-completed bookings.
 
 ## Migrations
 
-SQL lives under `database/migrations/` and is designed to be idempotent
-(re-runnable):
+SQL lives in the `database/` folder and is designed to be safe to re-run:
 
 | File                          | Purpose                                            |
 | ----------------------------- | -------------------------------------------------- |
-| `V1__schema_and_seed.sql`     | Baseline schema + seed hotels/rooms/services       |
-| `V2__room_and_booking_integrity.sql` | Unique room numbers per hotel, booking/date indexes, check constraints |
+| `database.sql`                | Baseline schema + seed hotels/rooms/services       |
+| `seed_rooms.sql`              | Manual seed of room inventory (used before the app was wired to do this on startup) |
+| `migrations/V2__room_and_booking_integrity.sql` | Unique room numbers per hotel, booking/date indexes, check constraints |
 
 ## Seeding behavior (`RoomSeeder`)
 
