@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
@@ -12,21 +12,22 @@ export const MyBookings = () => {
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState('ALL');
 
+  const fetchBookings = useCallback(() => {
+    if (!user) return;
+    setLoading(true);
+    api.getBookingsByUser(user.userId)
+      .then(data => setBookings(Array.isArray(data) ? data : []))
+      .catch(err => console.error(err))
+      .finally(() => setLoading(false));
+  }, [user]);
+
   useEffect(() => {
     if (!user) {
       navigate('/login');
       return;
     }
     fetchBookings();
-  }, [user]);
-
-  const fetchBookings = () => {
-    setLoading(true);
-    api.getBookingsByUser(user.userId)
-      .then(data => setBookings(Array.isArray(data) ? data : []))
-      .catch(err => console.error(err))
-      .finally(() => setLoading(false));
-  };
+  }, [user, navigate, fetchBookings]);
 
   const handleCancelBooking = async (bookingId) => {
     if (window.confirm('Are you sure you want to cancel this booking?')) {

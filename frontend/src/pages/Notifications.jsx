@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -11,21 +11,22 @@ export const Notifications = () => {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const fetchNotifications = useCallback(() => {
+    if (!user) return;
+    setLoading(true);
+    api.getNotificationsByUser(user.userId)
+      .then(data => setNotifications(Array.isArray(data) ? data : []))
+      .catch(err => console.error(err))
+      .finally(() => setLoading(false));
+  }, [user]);
+
   useEffect(() => {
     if (!user) {
       navigate('/login');
       return;
     }
     fetchNotifications();
-  }, [user]);
-
-  const fetchNotifications = () => {
-    setLoading(true);
-    api.getNotificationsByUser(user.userId)
-      .then(data => setNotifications(Array.isArray(data) ? data : []))
-      .catch(err => console.error(err))
-      .finally(() => setLoading(false));
-  };
+  }, [user, navigate, fetchNotifications]);
 
   const handleMarkRead = async (id) => {
     try {

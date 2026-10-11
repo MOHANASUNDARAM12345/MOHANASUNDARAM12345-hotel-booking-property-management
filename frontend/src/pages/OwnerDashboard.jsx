@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
@@ -30,16 +30,7 @@ export const OwnerDashboard = () => {
   const [staffForm, setStaffForm] = useState({ hotelId: '', name: '', role: 'Manager', phone: '', email: '' });
   const [couponForm, setCouponForm] = useState({ code: '', discountPercentage: 10, maxDiscount: 500, minBookingAmount: 1000 });
 
-  useEffect(() => {
-    if (!user || !isOwner) {
-      alert('Access Restricted. OWNER role required.');
-      navigate('/login');
-      return;
-    }
-    loadData();
-  }, [user, isOwner]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     try {
       const [pData, hData, rData, stData, cData] = await Promise.all([
@@ -59,7 +50,16 @@ export const OwnerDashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (!user || !isOwner) {
+      alert('Access Restricted. OWNER role required.');
+      navigate('/login');
+      return;
+    }
+    loadData();
+  }, [user, isOwner, navigate, loadData]);
 
   const handleCreateProperty = async (e) => {
     e.preventDefault();

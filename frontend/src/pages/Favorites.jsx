@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
@@ -12,15 +12,8 @@ export const Favorites = () => {
   const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (!user) {
-      navigate('/login');
-      return;
-    }
-    fetchFavorites();
-  }, [user]);
-
-  const fetchFavorites = () => {
+  const fetchFavorites = useCallback(() => {
+    if (!user) return;
     setLoading(true);
     api.getFavoritesByUser(user.userId)
       .then(async favs => {
@@ -43,7 +36,15 @@ export const Favorites = () => {
       })
       .catch(err => console.error(err))
       .finally(() => setLoading(false));
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    fetchFavorites();
+  }, [user, navigate, fetchFavorites]);
 
   const handleRemove = async (hotelId) => {
     try {
