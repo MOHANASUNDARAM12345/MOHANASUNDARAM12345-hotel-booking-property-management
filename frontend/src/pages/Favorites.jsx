@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
-import { Heart, Trash2, Hotel, Star, MapPin } from 'lucide-react';
+import { Heart, Trash2, MapPin } from 'lucide-react';
+import { getHotelImage, fallbackImage } from '../utils/hotelImages';
 
 export const Favorites = () => {
   const { user } = useAuth();
@@ -83,8 +84,13 @@ export const Favorites = () => {
             }}>
               <div style={{ height: '170px', background: '#e2e8f0', position: 'relative' }}>
                 <img
-                  src={fav.hotel?.imageUrl || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=600&q=80'}
-                  alt={fav.hotel?.hotelName || 'Hotel'}
+                  src={getHotelImage(fav.hotel)}
+                  alt={fav.hotel?.hotelName || `Hotel #${fav.hotelId}`}
+                  loading="lazy"
+                  onError={(event) => {
+                    event.currentTarget.onerror = null;
+                    event.currentTarget.src = fallbackImage;
+                  }}
                   style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                 />
                 <button
@@ -110,7 +116,7 @@ export const Favorites = () => {
                   {fav.hotel?.hotelName || `Hotel #${fav.hotelId}`}
                 </h3>
                 <p style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', color: '#64748b', fontSize: '0.85rem', marginBottom: '1rem' }}>
-                  <MapPin size={14} /> {fav.hotel?.location || 'City Center'}
+                  <MapPin size={14} /> {fav.hotel?.location || 'Location unavailable'}
                 </p>
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #f1f5f9', paddingTop: '0.75rem' }}>

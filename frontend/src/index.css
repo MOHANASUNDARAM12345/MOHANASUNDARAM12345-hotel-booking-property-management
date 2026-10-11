@@ -130,3 +130,27 @@ input, select, textarea {
   box-shadow: var(--shadow-xl);
   animation: fadeIn 0.25s ease forwards;
 }
+
+/* Responsive layout helpers */
+.hotel-details-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 2.5rem;
+}
+
+@media (max-width: 900px) {
+  .hotel-details-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .container {
+    padding: 0 1rem;
+  }
+
+  .modal-content {
+    padding: 1.25rem;
+  }
+}
+

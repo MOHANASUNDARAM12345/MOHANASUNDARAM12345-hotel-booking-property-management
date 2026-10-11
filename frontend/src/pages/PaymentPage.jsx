@@ -49,7 +49,7 @@ export const PaymentPage = () => {
   return (
     <div className="container animate-fade-in" style={{ padding: '3rem 1.5rem', maxWidth: '640px' }}>
       <div style={{ background: 'white', padding: '2.5rem', borderRadius: '20px', border: '1px solid #e2e8f0', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.08)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', borderBottom: '1px solid #f1f5f9', pb: '1rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', borderBottom: '1px solid #f1f5f9', paddingBottom: '1rem' }}>
           <div>
             <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0f172a' }}>Payment Checkout</h2>
             <p style={{ color: '#64748b', fontSize: '0.85rem' }}>Reservation #{bookingId}</p>

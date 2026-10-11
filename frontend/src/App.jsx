@@ -10,6 +10,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
+import { GuestAssistantWidget } from './components/GuestAssistantWidget';
 
 import Home from './pages/Home';
 import { Login } from './pages/Login';
@@ -120,6 +121,8 @@ function AppRoutes() {
       </main>
 
       <Footer />
+
+      <GuestAssistantWidget />
     </div>
   );
 }

@@ -86,7 +86,7 @@ export const HotelDetails = () => {
     setBookingLoading(true);
 
     try {
-      const res = await api.createBooking({
+      await api.createBooking({
         userId: user.userId,
         roomId: selectedRoom.roomId,
         checkInDate,
@@ -151,6 +151,7 @@ export const HotelDetails = () => {
           <img
             src={getHotelImage(hotel)}
             alt={hotel.hotelName}
+            loading="lazy"
             onError={(event) => {
               event.currentTarget.onerror = null;
               event.currentTarget.src = fallbackImage;
@@ -165,7 +166,7 @@ export const HotelDetails = () => {
             alignItems: 'flex-end',
             padding: '2rem'
           }}>
-            <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', color: 'white' }}>
+            <div style={{ width: '100%', display: 'flex', flexWrap: 'wrap', gap: '1rem', justifyContent: 'space-between', alignItems: 'flex-end', color: 'white' }}>
               <div>
                 <span style={{ background: '#4f46e5', color: 'white', padding: '0.25rem 0.75rem', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase' }}>
                   {hotel.category || 'Luxury Stay'}
@@ -204,7 +205,7 @@ export const HotelDetails = () => {
       </div>
 
       {/* Grid Layout */}
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '2.5rem' }}>
+      <div className="hotel-details-grid">
         <div>
           {/* About Hotel */}
           <div style={{ background: 'white', padding: '2rem', borderRadius: '16px', border: '1px solid #e2e8f0', marginBottom: '2rem' }}>

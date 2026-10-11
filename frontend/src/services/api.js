@@ -1,4 +1,14 @@
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api').replace(/\/+$/, '');
+const PRODUCTION_API_BASE_URL =
+  'https://mohanasundaram12345-hotel-booking-v844.onrender.com/api';
+
+const rawBaseUrl =
+  import.meta.env.VITE_API_BASE_URL ||
+  (import.meta.env.DEV ? '/api' : PRODUCTION_API_BASE_URL);
+
+const API_BASE_URL = rawBaseUrl.replace(/\/+$/, '');
+
+const NETWORK_ERROR_MESSAGE =
+  'Unable to reach the server. Please check your internet connection and try again.';
 
 const getHeaders = () => {
   const token = localStorage.getItem('token');
@@ -33,10 +43,34 @@ const handleResponse = async (response) => {
   return await response.text();
 };
 
+const safeFetch = async (url, options) => {
+  try {
+    return await fetch(url, options);
+  } catch {
+    throw new Error(NETWORK_ERROR_MESSAGE);
+  }
+};
+
+// Dedupe identical concurrent GET requests (React StrictMode double-mounts
+// components in development, which otherwise fires two identical requests).
+const inFlightGets = new Map();
+const dedupedGet = (url, options) => {
+  if (inFlightGets.has(url)) {
+    return inFlightGets.get(url);
+  }
+  const promise = safeFetch(url, options)
+    .then(handleResponse)
+    .finally(() => {
+      inFlightGets.delete(url);
+    });
+  inFlightGets.set(url, promise);
+  return promise;
+};
+
 export const api = {
   // Auth
   login: async (credentials) => {
-    const res = await fetch(`${API_BASE_URL}/auth/login`, {
+    const res = await safeFetch(`${API_BASE_URL}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(credentials),
@@ -44,7 +78,7 @@ export const api = {
     return handleResponse(res);
   },
   register: async (userData) => {
-    const res = await fetch(`${API_BASE_URL}/users`, {
+    const res = await safeFetch(`${API_BASE_URL}/users`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(userData),
@@ -52,33 +86,25 @@ export const api = {
     return handleResponse(res);
   },
   getUserByEmail: async (email) => {
-    const res = await fetch(`${API_BASE_URL}/users/email/${email}`, {
+    const res = await safeFetch(`${API_BASE_URL}/users/email/${email}`, {
       headers: getHeaders(),
     });
     return handleResponse(res);
   },
 
   // Public Hotels & Rooms
-  getHotels: async () => {
-    const res = await fetch(`${API_BASE_URL}/hotels`);
-    return handleResponse(res);
-  },
+  getHotels: async () => dedupedGet(`${API_BASE_URL}/hotels`),
   getHotelById: async (id) => {
-    const res = await fetch(`${API_BASE_URL}/hotels/${id}`);
+    const res = await safeFetch(`${API_BASE_URL}/hotels/${id}`);
     return handleResponse(res);
   },
-  getRoomsByHotel: async (hotelId) => {
-    const res = await fetch(`${API_BASE_URL}/hotels/${hotelId}/rooms`);
-    return handleResponse(res);
-  },
-  getRooms: async () => {
-    const res = await fetch(`${API_BASE_URL}/rooms`);
-    return handleResponse(res);
-  },
+  getRoomsByHotel: async (hotelId) =>
+    dedupedGet(`${API_BASE_URL}/hotels/${hotelId}/rooms`),
+  getRooms: async () => dedupedGet(`${API_BASE_URL}/rooms`),
 
   // Bookings
   createBooking: async (bookingData) => {
-    const res = await fetch(`${API_BASE_URL}/bookings`, {
+    const res = await safeFetch(`${API_BASE_URL}/bookings`, {
       method: 'POST',
       headers: getHeaders(),
       body: JSON.stringify(bookingData),
@@ -86,19 +112,19 @@ export const api = {
     return handleResponse(res);
   },
   getBookingsByUser: async (userId) => {
-    const res = await fetch(`${API_BASE_URL}/bookings/user/${userId}`, {
+    const res = await safeFetch(`${API_BASE_URL}/bookings/user/${userId}`, {
       headers: getHeaders(),
     });
     return handleResponse(res);
   },
   getBookingById: async (id) => {
-    const res = await fetch(`${API_BASE_URL}/bookings/${id}`, {
+    const res = await safeFetch(`${API_BASE_URL}/bookings/${id}`, {
       headers: getHeaders(),
     });
     return handleResponse(res);
   },
   updateBooking: async (id, bookingData) => {
-    const res = await fetch(`${API_BASE_URL}/bookings/${id}`, {
+    const res = await safeFetch(`${API_BASE_URL}/bookings/${id}`, {
       method: 'PUT',
       headers: getHeaders(),
       body: JSON.stringify(bookingData),
@@ -106,7 +132,7 @@ export const api = {
     return handleResponse(res);
   },
   cancelBooking: async (id) => {
-    const res = await fetch(`${API_BASE_URL}/bookings/${id}`, {
+    const res = await safeFetch(`${API_BASE_URL}/bookings/${id}`, {
       method: 'PUT',
       headers: getHeaders(),
       body: JSON.stringify({ status: 'CANCELLED' }),
@@ -116,7 +142,7 @@ export const api = {
 
   // Payments & Invoices
   createPayment: async (paymentData) => {
-    const res = await fetch(`${API_BASE_URL}/payments`, {
+    const res = await safeFetch(`${API_BASE_URL}/payments`, {
       method: 'POST',
       headers: getHeaders(),
       body: JSON.stringify(paymentData),
@@ -124,13 +150,13 @@ export const api = {
     return handleResponse(res);
   },
   getPaymentsByBooking: async (bookingId) => {
-    const res = await fetch(`${API_BASE_URL}/payments/booking/${bookingId}`, {
+    const res = await safeFetch(`${API_BASE_URL}/payments/booking/${bookingId}`, {
       headers: getHeaders(),
     });
     return handleResponse(res);
   },
   getInvoiceByPayment: async (paymentId) => {
-    const res = await fetch(`${API_BASE_URL}/invoices/payment/${paymentId}`, {
+    const res = await safeFetch(`${API_BASE_URL}/invoices/payment/${paymentId}`, {
       headers: getHeaders(),
     });
     return handleResponse(res);
@@ -138,7 +164,7 @@ export const api = {
 
   // Favorites
   addFavorite: async (favData) => {
-    const res = await fetch(`${API_BASE_URL}/favorites`, {
+    const res = await safeFetch(`${API_BASE_URL}/favorites`, {
       method: 'POST',
       headers: getHeaders(),
       body: JSON.stringify(favData),
@@ -146,13 +172,13 @@ export const api = {
     return handleResponse(res);
   },
   getFavoritesByUser: async (userId) => {
-    const res = await fetch(`${API_BASE_URL}/favorites/user/${userId}`, {
+    const res = await safeFetch(`${API_BASE_URL}/favorites/user/${userId}`, {
       headers: getHeaders(),
     });
     return handleResponse(res);
   },
   removeFavorite: async (userId, hotelId) => {
-    const res = await fetch(`${API_BASE_URL}/favorites/user/${userId}/hotel/${hotelId}`, {
+    const res = await safeFetch(`${API_BASE_URL}/favorites/user/${userId}/hotel/${hotelId}`, {
       method: 'DELETE',
       headers: getHeaders(),
     });
@@ -161,13 +187,13 @@ export const api = {
 
   // Notifications
   getNotificationsByUser: async (userId) => {
-    const res = await fetch(`${API_BASE_URL}/notifications/user/${userId}`, {
+    const res = await safeFetch(`${API_BASE_URL}/notifications/user/${userId}`, {
       headers: getHeaders(),
     });
     return handleResponse(res);
   },
   markNotificationRead: async (id) => {
-    const res = await fetch(`${API_BASE_URL}/notifications/${id}/read`, {
+    const res = await safeFetch(`${API_BASE_URL}/notifications/${id}/read`, {
       method: 'PUT',
       headers: getHeaders(),
     });
@@ -176,7 +202,7 @@ export const api = {
 
   // Reviews
   addReview: async (reviewData) => {
-    const res = await fetch(`${API_BASE_URL}/reviews`, {
+    const res = await safeFetch(`${API_BASE_URL}/reviews`, {
       method: 'POST',
       headers: getHeaders(),
       body: JSON.stringify(reviewData),
@@ -184,7 +210,7 @@ export const api = {
     return handleResponse(res);
   },
   getReviewsByHotel: async (hotelId) => {
-    const res = await fetch(`${API_BASE_URL}/reviews/hotel/${hotelId}`, {
+    const res = await safeFetch(`${API_BASE_URL}/reviews/hotel/${hotelId}`, {
       headers: getHeaders(),
     });
     return handleResponse(res);
@@ -192,25 +218,25 @@ export const api = {
 
   // Coupons & Services
   getCoupons: async () => {
-    const res = await fetch(`${API_BASE_URL}/coupons`);
+    const res = await safeFetch(`${API_BASE_URL}/coupons`);
     return handleResponse(res);
   },
   getCouponByCode: async (code) => {
-    const res = await fetch(`${API_BASE_URL}/coupons/code/${code}`);
+    const res = await safeFetch(`${API_BASE_URL}/coupons/code/${code}`);
     return handleResponse(res);
   },
   getServicesByHotel: async (hotelId) => {
-    const res = await fetch(`${API_BASE_URL}/services/hotel/${hotelId}`);
+    const res = await safeFetch(`${API_BASE_URL}/services/hotel/${hotelId}`);
     return handleResponse(res);
   },
 
   // Owner APIs
   getProperties: async () => {
-    const res = await fetch(`${API_BASE_URL}/owner/properties`, { headers: getHeaders() });
+    const res = await safeFetch(`${API_BASE_URL}/owner/properties`, { headers: getHeaders() });
     return handleResponse(res);
   },
   createProperty: async (data) => {
-    const res = await fetch(`${API_BASE_URL}/owner/properties`, {
+    const res = await safeFetch(`${API_BASE_URL}/owner/properties`, {
       method: 'POST',
       headers: getHeaders(),
       body: JSON.stringify(data),
@@ -218,7 +244,7 @@ export const api = {
     return handleResponse(res);
   },
   updateProperty: async (id, data) => {
-    const res = await fetch(`${API_BASE_URL}/owner/properties/${id}`, {
+    const res = await safeFetch(`${API_BASE_URL}/owner/properties/${id}`, {
       method: 'PUT',
       headers: getHeaders(),
       body: JSON.stringify(data),
@@ -226,7 +252,7 @@ export const api = {
     return handleResponse(res);
   },
   deleteProperty: async (id) => {
-    const res = await fetch(`${API_BASE_URL}/owner/properties/${id}`, {
+    const res = await safeFetch(`${API_BASE_URL}/owner/properties/${id}`, {
       method: 'DELETE',
       headers: getHeaders(),
     });
@@ -234,7 +260,7 @@ export const api = {
   },
 
   createHotel: async (data) => {
-    const res = await fetch(`${API_BASE_URL}/owner/hotels`, {
+    const res = await safeFetch(`${API_BASE_URL}/owner/hotels`, {
       method: 'POST',
       headers: getHeaders(),
       body: JSON.stringify(data),
@@ -242,7 +268,7 @@ export const api = {
     return handleResponse(res);
   },
   updateHotel: async (id, data) => {
-    const res = await fetch(`${API_BASE_URL}/owner/hotels/${id}`, {
+    const res = await safeFetch(`${API_BASE_URL}/owner/hotels/${id}`, {
       method: 'PUT',
       headers: getHeaders(),
       body: JSON.stringify(data),
@@ -250,7 +276,7 @@ export const api = {
     return handleResponse(res);
   },
   deleteHotel: async (id) => {
-    const res = await fetch(`${API_BASE_URL}/owner/hotels/${id}`, {
+    const res = await safeFetch(`${API_BASE_URL}/owner/hotels/${id}`, {
       method: 'DELETE',
       headers: getHeaders(),
     });
@@ -258,7 +284,7 @@ export const api = {
   },
 
   createRoom: async (data) => {
-    const res = await fetch(`${API_BASE_URL}/owner/rooms`, {
+    const res = await safeFetch(`${API_BASE_URL}/owner/rooms`, {
       method: 'POST',
       headers: getHeaders(),
       body: JSON.stringify(data),
@@ -266,7 +292,7 @@ export const api = {
     return handleResponse(res);
   },
   updateRoom: async (id, data) => {
-    const res = await fetch(`${API_BASE_URL}/owner/rooms/${id}`, {
+    const res = await safeFetch(`${API_BASE_URL}/owner/rooms/${id}`, {
       method: 'PUT',
       headers: getHeaders(),
       body: JSON.stringify(data),
@@ -274,7 +300,7 @@ export const api = {
     return handleResponse(res);
   },
   deleteRoom: async (id) => {
-    const res = await fetch(`${API_BASE_URL}/owner/rooms/${id}`, {
+    const res = await safeFetch(`${API_BASE_URL}/owner/rooms/${id}`, {
       method: 'DELETE',
       headers: getHeaders(),
     });
@@ -282,7 +308,7 @@ export const api = {
   },
 
   createStaff: async (data) => {
-    const res = await fetch(`${API_BASE_URL}/owner/staff`, {
+    const res = await safeFetch(`${API_BASE_URL}/owner/staff`, {
       method: 'POST',
       headers: getHeaders(),
       body: JSON.stringify(data),
@@ -290,11 +316,11 @@ export const api = {
     return handleResponse(res);
   },
   getStaffByHotel: async (hotelId) => {
-    const res = await fetch(`${API_BASE_URL}/owner/staff/hotel/${hotelId}`, { headers: getHeaders() });
+    const res = await safeFetch(`${API_BASE_URL}/owner/staff/hotel/${hotelId}`, { headers: getHeaders() });
     return handleResponse(res);
   },
   deleteStaff: async (id) => {
-    const res = await fetch(`${API_BASE_URL}/owner/staff/${id}`, {
+    const res = await safeFetch(`${API_BASE_URL}/owner/staff/${id}`, {
       method: 'DELETE',
       headers: getHeaders(),
     });
@@ -302,7 +328,7 @@ export const api = {
   },
 
   createCoupon: async (data) => {
-    const res = await fetch(`${API_BASE_URL}/owner/coupons`, {
+    const res = await safeFetch(`${API_BASE_URL}/owner/coupons`, {
       method: 'POST',
       headers: getHeaders(),
       body: JSON.stringify(data),
@@ -310,7 +336,7 @@ export const api = {
     return handleResponse(res);
   },
   deleteCoupon: async (id) => {
-    const res = await fetch(`${API_BASE_URL}/owner/coupons/${id}`, {
+    const res = await safeFetch(`${API_BASE_URL}/owner/coupons/${id}`, {
       method: 'DELETE',
       headers: getHeaders(),
     });
@@ -319,7 +345,7 @@ export const api = {
 
   // Smart Features & AI Differentiating Engines
   getSmartStayRecommendations: async (requestData) => {
-    const res = await fetch(`${API_BASE_URL}/smart-stay/recommend`, {
+    const res = await safeFetch(`${API_BASE_URL}/smart-stay/recommend`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(requestData),
@@ -328,7 +354,7 @@ export const api = {
   },
 
   askGuestAssistant: async (queryData) => {
-    const res = await fetch(`${API_BASE_URL}/assistant/chat`, {
+    const res = await safeFetch(`${API_BASE_URL}/assistant/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(queryData),
@@ -343,7 +369,7 @@ export const api = {
   },
 
   getCancellationRefundEstimate: async (bookingId) => {
-    const res = await fetch(`${API_BASE_URL}/bookings/${bookingId}/cancellation-refund-estimate`, {
+    const res = await safeFetch(`${API_BASE_URL}/bookings/${bookingId}/cancellation-refund-estimate`, {
       headers: getHeaders(),
     });
     return handleResponse(res);

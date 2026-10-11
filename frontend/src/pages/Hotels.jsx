@@ -180,8 +180,8 @@ function Hotels() {
               hotel.pricePerNight ??
               hotel.price ??
               hotel.basePrice ??
-              0;
-            const rating = hotel.rating ?? 4.5;
+              null;
+            const rating = hotel.rating ?? null;
 
             return (
               <article
@@ -193,6 +193,7 @@ function Hotels() {
                     className="hotel-image"
                     src={getHotelImage(hotel)}
                     alt={hotelName}
+                    loading="lazy"
                     onError={(event) => {
                       event.currentTarget.onerror = null;
                       event.currentTarget.src = fallbackImage;
@@ -213,21 +214,32 @@ function Hotels() {
 
                   <div className="hotel-rating">
                     <Star size={16} fill="currentColor" />
-                    <strong>{rating}</strong>
+                    <strong>{rating ?? "New"}</strong>
                     <span className="hotel-rating-label">Rating</span>
                   </div>
 
                   <div className="hotel-card-footer">
                     <div>
-                      <span className="hotel-price-label">
-                        Starting from
-                      </span>
-                      <div className="hotel-price">
-                        ₹{formatPrice(price)}
-                        <span className="hotel-price-unit">
-                          {" "}/ night
-                        </span>
-                      </div>
+                      {price != null ? (
+                        <>
+                          <span className="hotel-price-label">
+                            Starting from
+                          </span>
+                          <div className="hotel-price">
+                            ₹{formatPrice(price)}
+                            <span className="hotel-price-unit">
+                              {" "}/ night
+                            </span>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <span className="hotel-price-label">
+                            Price
+                          </span>
+                          <div className="hotel-price">On request</div>
+                        </>
+                      )}
                     </div>
 
                     {hotelId != null ? (

@@ -89,7 +89,7 @@ export const GuestAssistantWidget = () => {
             color: 'white',
             padding: '1rem 1.25rem',
             display: 'flex',
-            justify: 'space-between',
+            justifyContent: 'space-between',
             alignItems: 'center'
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>

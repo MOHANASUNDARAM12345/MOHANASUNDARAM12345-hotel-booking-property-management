@@ -396,6 +396,7 @@ export const Home = () => {
                   <img
                     src={getHotelImage(hotel)}
                     alt={hotel.hotelName || hotel.name || "Hotel"}
+                    loading="lazy"
                     onError={(event) => {
                       event.currentTarget.onerror = null;
                       event.currentTarget.src = fallbackImage;
@@ -425,7 +426,7 @@ export const Home = () => {
                     }}
                   >
                     <Star size={14} fill="#fbbf24" />
-                    {hotel.rating ?? 4.5}
+                    {hotel.rating != null ? hotel.rating : "New"}
                   </div>
                 </div>
 
@@ -464,7 +465,7 @@ export const Home = () => {
                     }}
                   >
                     <MapPin size={14} />
-                    {hotel.location || hotel.city || "City Center"}
+                    {hotel.location || hotel.city || "Location unavailable"}
                   </p>
 
                   <div
@@ -478,23 +479,37 @@ export const Home = () => {
                     }}
                   >
                     <div>
-                      <span
-                        style={{
-                          fontSize: "1.15rem",
-                          fontWeight: 800,
-                          color: "#0f172a",
-                        }}
-                      >
-                        ₹
-                        {Number(
-                          hotel.pricePerNight ?? hotel.price ?? 2500
-                        ).toLocaleString("en-IN")}
-                      </span>
-                      <span
-                        style={{ fontSize: "0.8rem", color: "#64748b" }}
-                      >
-                        {" "}/ night
-                      </span>
+                      {hotel.pricePerNight != null || hotel.price != null ? (
+                        <>
+                          <span
+                            style={{
+                              fontSize: "1.15rem",
+                              fontWeight: 800,
+                              color: "#0f172a",
+                            }}
+                          >
+                            ₹
+                            {Number(
+                              hotel.pricePerNight ?? hotel.price
+                            ).toLocaleString("en-IN")}
+                          </span>
+                          <span
+                            style={{ fontSize: "0.8rem", color: "#64748b" }}
+                          >
+                            {" "}/ night
+                          </span>
+                        </>
+                      ) : (
+                        <span
+                          style={{
+                            fontSize: "0.95rem",
+                            fontWeight: 700,
+                            color: "#64748b",
+                          }}
+                        >
+                          Price on request
+                        </span>
+                      )}
                     </div>
 
                     <Link
