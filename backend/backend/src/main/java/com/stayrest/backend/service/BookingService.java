@@ -1,5 +1,6 @@
 package com.stayrest.backend.service;
 
+import com.stayrest.backend.constants.BookingStatus;
 import com.stayrest.backend.entity.Booking;
 import com.stayrest.backend.entity.Room;
 import com.stayrest.backend.repository.BookingRepository;
@@ -30,7 +31,7 @@ public class BookingService {
         validateBooking(booking, null);
 
         if (booking.getStatus() == null || booking.getStatus().isBlank()) {
-            booking.setStatus("PENDING");
+            booking.setStatus(BookingStatus.PENDING);
         }
 
         // Auto calculate total amount if not provided or zero
@@ -110,8 +111,8 @@ public class BookingService {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new RuntimeException("Booking not found with ID: " + bookingId));
 
-        if (!"CANCELLED".equalsIgnoreCase(booking.getStatus())) {
-            booking.setStatus("CANCELLED");
+        if (!BookingStatus.CANCELLED.equalsIgnoreCase(booking.getStatus())) {
+            booking.setStatus(BookingStatus.CANCELLED);
             booking = bookingRepository.save(booking);
             refreshRoomStatus(booking.getRoomId());
         }
@@ -126,7 +127,7 @@ public class BookingService {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new RuntimeException("Booking not found with ID: " + bookingId));
 
-        booking.setStatus("COMPLETED");
+        booking.setStatus(BookingStatus.COMPLETED);
         booking = bookingRepository.save(booking);
         refreshRoomStatus(booking.getRoomId());
         return booking;
@@ -152,9 +153,9 @@ public class BookingService {
         roomRepository.findById(roomId).ifPresent(room -> {
             boolean active = bookingRepository.findByRoomId(roomId).stream()
                     .anyMatch(b -> b.getStatus() != null
-                            && !b.getStatus().equalsIgnoreCase("CANCELLED")
-                            && !b.getStatus().equalsIgnoreCase("CHECKED_OUT")
-                            && !b.getStatus().equalsIgnoreCase("COMPLETED"));
+                            && !b.getStatus().equalsIgnoreCase(BookingStatus.CANCELLED)
+                            && !b.getStatus().equalsIgnoreCase(BookingStatus.CHECKED_OUT)
+                            && !b.getStatus().equalsIgnoreCase(BookingStatus.COMPLETED));
 
             String target = active ? "BOOKED" : "AVAILABLE";
             if (room.getStatus() == null

@@ -1,5 +1,6 @@
 package com.stayrest.backend.service;
 
+import com.stayrest.backend.constants.BookingStatus;
 import com.stayrest.backend.entity.Booking;
 import com.stayrest.backend.entity.Hotel;
 import com.stayrest.backend.entity.Property;
@@ -116,16 +117,16 @@ public class OwnerAnalyticsService {
         List<Map<String, Object>> recentSummary = new ArrayList<>();
 
         for (Booking b : ownerBookings) {
-            if ("CONFIRMED".equalsIgnoreCase(b.getStatus()) || "COMPLETED".equalsIgnoreCase(b.getStatus())) {
+            if (BookingStatus.CONFIRMED.equalsIgnoreCase(b.getStatus()) || BookingStatus.COMPLETED.equalsIgnoreCase(b.getStatus())) {
                 confirmed++;
                 totalRev += (b.getTotalAmount() != null ? b.getTotalAmount() : 0.0);
-            } else if ("PENDING".equalsIgnoreCase(b.getStatus())) {
+            } else if (BookingStatus.PENDING.equalsIgnoreCase(b.getStatus())) {
                 pending++;
-            } else if ("CANCELLED".equalsIgnoreCase(b.getStatus())) {
+            } else if (BookingStatus.CANCELLED.equalsIgnoreCase(b.getStatus())) {
                 cancelled++;
             }
 
-            if (b.getCheckInDate() != null && !b.getCheckInDate().isBefore(today) && !"CANCELLED".equalsIgnoreCase(b.getStatus())) {
+            if (b.getCheckInDate() != null && !b.getCheckInDate().isBefore(today) && !BookingStatus.CANCELLED.equalsIgnoreCase(b.getStatus())) {
                 upcoming++;
             }
 

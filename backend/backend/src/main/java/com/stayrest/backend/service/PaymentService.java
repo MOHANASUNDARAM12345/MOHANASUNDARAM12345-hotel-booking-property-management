@@ -1,5 +1,6 @@
 package com.stayrest.backend.service;
 
+import com.stayrest.backend.constants.BookingStatus;
 import com.stayrest.backend.entity.Booking;
 import com.stayrest.backend.entity.Invoice;
 import com.stayrest.backend.entity.Payment;
@@ -56,7 +57,7 @@ public class PaymentService {
         Payment savedPayment = paymentRepository.save(payment);
 
         // Update booking status to CONFIRMED
-        booking.setStatus("CONFIRMED");
+        booking.setStatus(BookingStatus.CONFIRMED);
         bookingRepository.save(booking);
 
         // Auto-generate invoice
