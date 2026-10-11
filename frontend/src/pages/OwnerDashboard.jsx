@@ -12,6 +12,7 @@ export const OwnerDashboard = () => {
   const [properties, setProperties] = useState([]);
   const [hotels, setHotels] = useState([]);
   const [rooms, setRooms] = useState([]);
+  const [staffList, setStaffList] = useState([]);
   const [coupons, setCoupons] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -41,15 +42,17 @@ export const OwnerDashboard = () => {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [pData, hData, rData, cData] = await Promise.all([
+      const [pData, hData, rData, stData, cData] = await Promise.all([
         api.getProperties().catch(() => []),
         api.getHotels().catch(() => []),
         api.getRooms().catch(() => []),
+        api.getAllStaff().catch(() => []),
         api.getCoupons().catch(() => []),
       ]);
       setProperties(Array.isArray(pData) ? pData : []);
       setHotels(Array.isArray(hData) ? hData : []);
       setRooms(Array.isArray(rData) ? rData : []);
+      setStaffList(Array.isArray(stData) ? stData : []);
       setCoupons(Array.isArray(cData) ? cData : []);
     } catch (err) {
       console.error(err);
@@ -135,6 +138,13 @@ export const OwnerDashboard = () => {
   const handleDeleteRoom = async (id) => {
     if (window.confirm('Delete this room?')) {
       await api.deleteRoom(id);
+      loadData();
+    }
+  };
+
+  const handleDeleteStaff = async (id) => {
+    if (window.confirm('Remove this staff member?')) {
+      await api.deleteStaff(id);
       loadData();
     }
   };
@@ -326,6 +336,30 @@ export const OwnerDashboard = () => {
                 </button>
               </div>
               <p style={{ color: '#64748b', fontSize: '0.9rem' }}>Manage receptionist, housekeeping, and front desk personnel.</p>
+
+              {staffList.length === 0 ? (
+                <div style={{ background: 'white', padding: '3rem', borderRadius: '16px', textAlign: 'center', border: '1px dashed #cbd5e1' }}>
+                  <p style={{ color: '#64748b' }}>No staff members added yet. Click "Add Staff Member".</p>
+                </div>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.25rem' }}>
+                  {staffList.map(s => (
+                    <div key={s.staffId} style={{ background: 'white', padding: '1.25rem', borderRadius: '14px', border: '1px solid #e2e8f0' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
+                        <div>
+                          <h4 style={{ fontSize: '1.1rem', fontWeight: 700 }}>{s.name}</h4>
+                          <span className="badge badge-completed">{s.role}</span>
+                        </div>
+                        <button onClick={() => handleDeleteStaff(s.staffId)} style={{ background: '#fee2e2', color: '#ef4444', padding: '0.3rem', borderRadius: '6px' }}>
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                      <p style={{ fontSize: '0.85rem', color: '#64748b', marginTop: '0.4rem' }}>{s.email} • {s.phone || 'No phone'}</p>
+                      <p style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Hotel #{s.hotelId}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -442,6 +476,34 @@ export const OwnerDashboard = () => {
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
                 <button type="button" onClick={() => setShowCouponModal(false)} style={{ background: '#f1f5f9', padding: '0.6rem 1rem', borderRadius: '8px' }}>Cancel</button>
                 <button type="submit" style={{ background: '#4f46e5', color: 'white', padding: '0.6rem 1.25rem', borderRadius: '8px', fontWeight: 700 }}>Save Coupon</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* CREATE STAFF MODAL */}
+      {showStaffModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '1rem' }}>Add Staff Member</h3>
+            <form onSubmit={handleCreateStaff} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <select value={staffForm.hotelId} onChange={e => setStaffForm({ ...staffForm, hotelId: e.target.value })} style={{ padding: '0.65rem', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
+                <option value="">Select Hotel</option>
+                {hotels.map(h => <option key={h.hotelId} value={h.hotelId}>{h.hotelName}</option>)}
+              </select>
+              <input type="text" required placeholder="Full Name" value={staffForm.name} onChange={e => setStaffForm({ ...staffForm, name: e.target.value })} style={{ padding: '0.65rem', borderRadius: '8px', border: '1px solid #cbd5e1' }} />
+              <select value={staffForm.role} onChange={e => setStaffForm({ ...staffForm, role: e.target.value })} style={{ padding: '0.65rem', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
+                <option value="Manager">Manager</option>
+                <option value="Receptionist">Receptionist</option>
+                <option value="Housekeeping">Housekeeping</option>
+                <option value="Chef">Chef</option>
+              </select>
+              <input type="tel" placeholder="Phone" value={staffForm.phone} onChange={e => setStaffForm({ ...staffForm, phone: e.target.value })} style={{ padding: '0.65rem', borderRadius: '8px', border: '1px solid #cbd5e1' }} />
+              <input type="email" placeholder="Email" value={staffForm.email} onChange={e => setStaffForm({ ...staffForm, email: e.target.value })} style={{ padding: '0.65rem', borderRadius: '8px', border: '1px solid #cbd5e1' }} />
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+                <button type="button" onClick={() => setShowStaffModal(false)} style={{ background: '#f1f5f9', padding: '0.6rem 1rem', borderRadius: '8px' }}>Cancel</button>
+                <button type="submit" style={{ background: '#4f46e5', color: 'white', padding: '0.6rem 1.25rem', borderRadius: '8px', fontWeight: 700 }}>Save Staff Member</button>
               </div>
             </form>
           </div>

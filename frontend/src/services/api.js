@@ -371,6 +371,10 @@ export const api = {
     });
     return handleResponse(res);
   },
+  getAllStaff: async () => {
+    const res = await safeFetch(`${API_BASE_URL}/owner/staff`, { headers: getHeaders() });
+    return handleResponse(res);
+  },
   getStaffByHotel: async (hotelId) => {
     const res = await safeFetch(`${API_BASE_URL}/owner/staff/hotel/${hotelId}`, { headers: getHeaders() });
     return handleResponse(res);
