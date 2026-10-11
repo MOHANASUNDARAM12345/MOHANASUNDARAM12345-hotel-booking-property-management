@@ -24,7 +24,7 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
      * bookings for the same room and prevents double booking.
      */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("SELECT b FROM Booking b WHERE b.roomId = :roomId AND UPPER(COALESCE(b.status, 'PENDING')) NOT IN ('CANCELLED', 'CHECKED_OUT') AND b.checkInDate < :checkOutDate AND b.checkOutDate > :checkInDate")
+    @Query("SELECT b FROM Booking b WHERE b.roomId = :roomId AND UPPER(COALESCE(b.status, 'PENDING')) NOT IN ('CANCELLED', 'CHECKED_OUT', 'COMPLETED') AND b.checkInDate < :checkOutDate AND b.checkOutDate > :checkInDate")
     List<Booking> findOverlappingBookings(
             @Param("roomId") Integer roomId,
             @Param("checkInDate") LocalDate checkInDate,
@@ -36,7 +36,7 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
      * [checkInDate, checkOutDate). Used to compute per-hotel availability
      * for the given dates.
      */
-    @Query("SELECT b FROM Booking b WHERE UPPER(COALESCE(b.status, 'PENDING')) NOT IN ('CANCELLED', 'CHECKED_OUT') AND b.checkInDate < :checkOutDate AND b.checkOutDate > :checkInDate")
+    @Query("SELECT b FROM Booking b WHERE UPPER(COALESCE(b.status, 'PENDING')) NOT IN ('CANCELLED', 'CHECKED_OUT', 'COMPLETED') AND b.checkInDate < :checkOutDate AND b.checkOutDate > :checkInDate")
     List<Booking> findOverlappingBookings(
             @Param("checkInDate") LocalDate checkInDate,
             @Param("checkOutDate") LocalDate checkOutDate
