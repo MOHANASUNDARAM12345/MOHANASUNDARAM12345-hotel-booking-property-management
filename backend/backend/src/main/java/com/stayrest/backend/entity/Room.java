@@ -1,6 +1,11 @@
 package com.stayrest.backend.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
+import jakarta.validation.constraints.Size;
 
 @Entity
 @Table(name = "rooms")
@@ -11,21 +16,28 @@ public class Room {
     @Column(name = "room_id")
     private Integer roomId;
 
+    @NotBlank
+    @Size(max = 20)
     @Column(name = "room_number", nullable = false, length = 20)
     private String roomNumber;
 
+    @Size(max = 50)
     @Column(name = "room_type", length = 50)
     private String roomType;
 
+    @Size(max = 30)
     @Column(name = "status", length = 30)
     private String status;
 
+    @PositiveOrZero
     @Column(name = "price")
     private Double price;
 
+    @Positive
     @Column(name = "capacity")
     private Integer capacity;
 
+    @NotNull
     @Column(name = "hotel_id", nullable = false)
     private Integer hotelId;
 

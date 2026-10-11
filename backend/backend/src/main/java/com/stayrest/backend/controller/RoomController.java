@@ -2,6 +2,7 @@ package com.stayrest.backend.controller;
 
 import com.stayrest.backend.entity.Room;
 import com.stayrest.backend.service.RoomService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,7 +20,7 @@ public class RoomController {
 
     @PostMapping
     public ResponseEntity<Room> createRoom(
-            @RequestBody Room room) {
+            @Valid @RequestBody Room room) {
 
         Room savedRoom = roomService.createRoom(room);
 
@@ -55,7 +56,7 @@ public class RoomController {
     @PutMapping("/{id}")
     public ResponseEntity<Room> updateRoom(
             @PathVariable Integer id,
-            @RequestBody Room room) {
+            @Valid @RequestBody Room room) {
 
         return ResponseEntity.ok(
                 roomService.updateRoom(id, room)
