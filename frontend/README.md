@@ -1,16 +1,58 @@
-# React + Vite
+# StayRest Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+React 19 + Vite 8 single-page application for the StayRest Hotel Booking and
+Property Management System. This is the customer-facing experience (search,
+booking, payments, invoices, favorites) and the owner dashboard.
 
-Currently, two official plugins are available:
+## Prerequisites
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- Node.js 18+ (npm)
+- The backend running on `http://localhost:8080` (see root `README.md`)
 
-## React Compiler
+## Setup
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+```bash
+npm install
+```
 
-## Expanding the Oxlint configuration
+Create a `.env.local` file in this directory (see `.env.example`):
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+```env
+VITE_API_BASE_URL=http://localhost:8080/api
+```
+
+## Scripts
+
+| Command            | Purpose                                        |
+| ------------------ | ---------------------------------------------- |
+| `npm run dev`      | Start the dev server with HMR                  |
+| `npm run build`    | Produce a production build in `dist/`          |
+| `npm run preview`  | Serve the production build locally             |
+| `npm run lint`     | Run the Oxlint checks                          |
+
+## Project Structure
+
+```
+src/
+├── components/        # Shared UI (Navbar, Footer)
+├── context/           # AuthContext (login state, token)
+├── pages/             # Route views (Home, Hotels, HotelDetails,
+│                      #   MyBookings, Payment, Invoice, OwnerDashboard, ...)
+├── services/          # api.js — single REST client used by every page
+└── main.jsx           # App entry point
+```
+
+## Conventions
+
+- Every HTTP call goes through `src/services/api.js`, which attaches the JWT
+  from `localStorage`, parses responses exactly once, and throws a normalized
+  `Error` with a human-readable message on failure.
+- Authentication state is shared through `AuthContext`; keep pages focused on
+  rendering, not on token plumbing.
+- Styling is plain CSS (design tokens in `index.css`); no CSS framework.
+
+## Production API
+
+By default `VITE_API_BASE_URL` points to the deployed backend
+(`https://<app>.onrender.com/api`). Set a different value to target a local
+backend during development.
