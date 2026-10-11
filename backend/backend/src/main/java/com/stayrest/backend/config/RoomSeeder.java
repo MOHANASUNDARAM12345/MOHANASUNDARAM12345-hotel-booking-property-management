@@ -55,13 +55,25 @@ public class RoomSeeder implements CommandLineRunner {
                 }
             }
 
+            // The hotel already has at least five rooms: never add more.
+            int roomCount = existing.size();
+            if (roomCount >= RoomTemplate.STANDARD_SET.size()) {
+                continue;
+            }
+
             double basePrice = (hotel.getPrice() != null && hotel.getPrice() > 0)
                     ? hotel.getPrice()
                     : 1500.0;
 
             for (RoomTemplate template : RoomTemplate.STANDARD_SET) {
+                if (roomCount >= RoomTemplate.STANDARD_SET.size()) {
+                    break;
+                }
+
                 String roomNumber = template.roomNumber(hotel.getHotelId());
 
+                // Same room number already exists for this hotel: count it once
+                // and move on, so no duplicate rows are ever created.
                 if (existingNumbers.contains(roomNumber.toUpperCase())) {
                     continue;
                 }
@@ -77,6 +89,7 @@ public class RoomSeeder implements CommandLineRunner {
 
                 roomRepository.save(room);
                 existingNumbers.add(roomNumber.toUpperCase());
+                roomCount++;
                 inserted++;
             }
         }
