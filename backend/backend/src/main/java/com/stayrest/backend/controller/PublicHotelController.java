@@ -4,9 +4,11 @@ import com.stayrest.backend.entity.Hotel;
 import com.stayrest.backend.entity.Room;
 import com.stayrest.backend.service.HotelService;
 import com.stayrest.backend.service.RoomService;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -36,6 +38,17 @@ public class PublicHotelController {
     @GetMapping("/hotels/{hotelId}/rooms")
     public ResponseEntity<List<Room>> getRoomsByHotel(@PathVariable Integer hotelId) {
         return ResponseEntity.ok(roomService.getRoomsByHotel(hotelId));
+    }
+
+    @GetMapping("/hotels/{hotelId}/available-rooms")
+    public ResponseEntity<List<Room>> getAvailableRoomsByHotel(
+            @PathVariable Integer hotelId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkIn,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkOut,
+            @RequestParam(required = false) Integer guests) {
+        return ResponseEntity.ok(
+                roomService.getAvailableRoomsByHotel(hotelId, checkIn, checkOut, guests)
+        );
     }
 
     @GetMapping("/rooms")

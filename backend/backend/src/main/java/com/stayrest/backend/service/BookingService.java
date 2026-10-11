@@ -5,6 +5,7 @@ import com.stayrest.backend.entity.Room;
 import com.stayrest.backend.repository.BookingRepository;
 import com.stayrest.backend.repository.RoomRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
@@ -24,6 +25,7 @@ public class BookingService {
         this.roomRepository = roomRepository;
     }
 
+    @Transactional
     public Booking createBooking(Booking booking) {
         validateBooking(booking, null);
 
@@ -40,7 +42,9 @@ public class BookingService {
             booking.setTotalAmount(pricePerNight * days);
         }
 
-        return bookingRepository.save(booking);
+        Booking saved = bookingRepository.save(booking);
+        refreshRoomStatus(saved.getRoomId());
+        return saved;
     }
 
     public List<Booking> getAllBookings() {
@@ -59,17 +63,27 @@ public class BookingService {
         return bookingRepository.findByRoomId(roomId);
     }
 
+    @Transactional
     public Booking updateBooking(Integer bookingId, Booking updatedBooking) {
         Booking existingBooking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new RuntimeException("Booking not found with ID: " + bookingId));
 
-        validateBooking(updatedBooking, bookingId);
-
-        existingBooking.setUserId(updatedBooking.getUserId());
-        existingBooking.setRoomId(updatedBooking.getRoomId());
-        existingBooking.setCheckInDate(updatedBooking.getCheckInDate());
-        existingBooking.setCheckOutDate(updatedBooking.getCheckOutDate());
-        existingBooking.setGuests(updatedBooking.getGuests());
+        // Partial update: only overwrite the fields that are actually provided.
+        if (updatedBooking.getUserId() != null) {
+            existingBooking.setUserId(updatedBooking.getUserId());
+        }
+        if (updatedBooking.getRoomId() != null) {
+            existingBooking.setRoomId(updatedBooking.getRoomId());
+        }
+        if (updatedBooking.getCheckInDate() != null) {
+            existingBooking.setCheckInDate(updatedBooking.getCheckInDate());
+        }
+        if (updatedBooking.getCheckOutDate() != null) {
+            existingBooking.setCheckOutDate(updatedBooking.getCheckOutDate());
+        }
+        if (updatedBooking.getGuests() != null) {
+            existingBooking.setGuests(updatedBooking.getGuests());
+        }
         if (updatedBooking.getStatus() != null) {
             existingBooking.setStatus(updatedBooking.getStatus());
         }
@@ -77,11 +91,76 @@ public class BookingService {
             existingBooking.setTotalAmount(updatedBooking.getTotalAmount());
         }
 
-        return bookingRepository.save(existingBooking);
+        validateBooking(existingBooking, bookingId);
+
+        Booking saved = bookingRepository.save(existingBooking);
+        refreshRoomStatus(saved.getRoomId());
+        return saved;
+    }
+
+    /**
+     * Cancels a booking (idempotent). The room stays/becomes free for other dates.
+     */
+    @Transactional
+    public Booking cancelBooking(Integer bookingId) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new RuntimeException("Booking not found with ID: " + bookingId));
+
+        if (!"CANCELLED".equalsIgnoreCase(booking.getStatus())) {
+            booking.setStatus("CANCELLED");
+            booking = bookingRepository.save(booking);
+            refreshRoomStatus(booking.getRoomId());
+        }
+        return booking;
+    }
+
+    /**
+     * Marks a booking as checked out / completed and frees the room.
+     */
+    @Transactional
+    public Booking checkoutBooking(Integer bookingId) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new RuntimeException("Booking not found with ID: " + bookingId));
+
+        booking.setStatus("COMPLETED");
+        booking = bookingRepository.save(booking);
+        refreshRoomStatus(booking.getRoomId());
+        return booking;
     }
 
     public void deleteBooking(Integer bookingId) {
+        Booking booking = bookingRepository.findById(bookingId).orElse(null);
         bookingRepository.deleteById(bookingId);
+        if (booking != null) {
+            refreshRoomStatus(booking.getRoomId());
+        }
+    }
+
+    /**
+     * Updates the room's operational status so that entirely free rooms are
+     * marked AVAILABLE and rooms holding an active booking are marked BOOKED.
+     * Date-level availability itself is always derived from the bookings table.
+     */
+    private void refreshRoomStatus(Integer roomId) {
+        if (roomId == null) {
+            return;
+        }
+        roomRepository.findById(roomId).ifPresent(room -> {
+            boolean active = bookingRepository.findByRoomId(roomId).stream()
+                    .anyMatch(b -> b.getStatus() != null
+                            && !b.getStatus().equalsIgnoreCase("CANCELLED")
+                            && !b.getStatus().equalsIgnoreCase("CHECKED_OUT")
+                            && !b.getStatus().equalsIgnoreCase("COMPLETED"));
+
+            String target = active ? "BOOKED" : "AVAILABLE";
+            if (room.getStatus() == null
+                    || (!room.getStatus().equalsIgnoreCase("MAINTENANCE")
+                        && !room.getStatus().equalsIgnoreCase("OUT_OF_SERVICE")
+                        && !room.getStatus().equalsIgnoreCase(target))) {
+                room.setStatus(target);
+                roomRepository.save(room);
+            }
+        });
     }
 
     public Map<String, Object> calculateRefundEstimate(Integer bookingId) {
@@ -139,33 +218,39 @@ public class BookingService {
             throw new IllegalArgumentException("Guests count must be greater than 0");
         }
 
-        // Room Operational Status and Capacity Validation
+        if (booking.getCheckInDate().isBefore(LocalDate.now())) {
+            throw new IllegalArgumentException("Check-in date cannot be in the past");
+        }
+
         if (booking.getRoomId() != null) {
             Optional<Room> roomOpt = roomRepository.findById(booking.getRoomId());
             if (roomOpt.isPresent()) {
                 Room room = roomOpt.get();
                 if (room.getStatus() != null &&
-                    ("MAINTENANCE".equalsIgnoreCase(room.getStatus()) || "OUT_OF_SERVICE".equalsIgnoreCase(room.getStatus()))) {
+                        ("MAINTENANCE".equalsIgnoreCase(room.getStatus())
+                                || "OUT_OF_SERVICE".equalsIgnoreCase(room.getStatus()))) {
                     throw new IllegalArgumentException("Room " + room.getRoomNumber() + " is currently under maintenance and cannot be booked");
                 }
                 if (room.getCapacity() != null && booking.getGuests() > room.getCapacity()) {
                     throw new IllegalArgumentException("Selected room capacity is " + room.getCapacity() + " guests, but " + booking.getGuests() + " guests requested");
                 }
             }
-        }
 
-        // Check for double booking / overlapping dates
-        List<Booking> overlaps = bookingRepository.findOverlappingBookings(
-                booking.getRoomId(),
-                booking.getCheckInDate(),
-                booking.getCheckOutDate()
-        );
+            // Check for double booking / overlapping dates. Runs inside the
+            // transaction so the pessimistic lock in the repository prevents
+            // two concurrent requests from booking the same room.
+            List<Booking> overlaps = bookingRepository.findOverlappingBookings(
+                    booking.getRoomId(),
+                    booking.getCheckInDate(),
+                    booking.getCheckOutDate()
+            );
 
-        boolean isOverlapping = overlaps.stream()
-                .anyMatch(b -> currentBookingId == null || !b.getBookingId().equals(currentBookingId));
+            boolean isOverlapping = overlaps.stream()
+                    .anyMatch(b -> currentBookingId == null || !b.getBookingId().equals(currentBookingId));
 
-        if (isOverlapping) {
-            throw new IllegalArgumentException("Room is already booked for the selected dates");
+            if (isOverlapping) {
+                throw new IllegalArgumentException("Room is already booked for the selected dates");
+            }
         }
     }
 }

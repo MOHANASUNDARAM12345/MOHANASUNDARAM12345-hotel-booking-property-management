@@ -1,17 +1,31 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../services/api';
-import { BedDouble, Users, Hotel, ShieldCheck } from 'lucide-react';
+import { BedDouble, Users, Hotel, AlertCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
+
+const formatStatus = (status) => (status || 'AVAILABLE').toUpperCase();
 
 export const Rooms = () => {
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
+    let active = true;
+
     api.getRooms()
-      .then(data => setRooms(Array.isArray(data) ? data : []))
-      .catch(err => console.error(err))
-      .finally(() => setLoading(false));
+      .then(data => {
+        if (active) setRooms(Array.isArray(data) ? data : []);
+      })
+      .catch(err => {
+        console.error(err);
+        if (active) setError(err.message || 'Unable to load rooms. Please try again later.');
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => { active = false; };
   }, []);
 
   return (
@@ -23,10 +37,33 @@ export const Rooms = () => {
 
       {loading ? (
         <div style={{ textAlign: 'center', padding: '4rem', color: '#64748b' }}>Loading available rooms...</div>
+      ) : error ? (
+        <div style={{ textAlign: 'center', padding: '4rem', background: 'white', borderRadius: '16px', border: '1px dashed #fecaca' }}>
+          <AlertCircle size={48} color="#f87171" style={{ marginBottom: '1rem' }} />
+          <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#991b1b' }}>Unable to load rooms</h3>
+          <p style={{ color: '#64748b', marginTop: '0.25rem' }}>{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            style={{
+              marginTop: '1.25rem',
+              background: '#4f46e5',
+              color: 'white',
+              padding: '0.6rem 1.5rem',
+              borderRadius: '8px',
+              fontWeight: 700
+            }}
+          >
+            Try Again
+          </button>
+        </div>
       ) : rooms.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '4rem', background: 'white', borderRadius: '16px', border: '1px dashed #cbd5e1' }}>
           <BedDouble size={48} color="#94a3b8" style={{ marginBottom: '1rem' }} />
           <h3 style={{ fontSize: '1.2rem', fontWeight: 700 }}>No Rooms Available</h3>
+          <p style={{ color: '#64748b', fontSize: '0.9rem', marginTop: '0.25rem' }}>Please check back later or browse hotels.</p>
+          <Link to="/hotels" style={{ display: 'inline-block', marginTop: '1rem', background: '#4f46e5', color: 'white', padding: '0.6rem 1.25rem', borderRadius: '8px', fontWeight: 600 }}>
+            Browse Hotels
+          </Link>
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
@@ -48,17 +85,21 @@ export const Rooms = () => {
                   borderRadius: '20px',
                   fontSize: '0.75rem',
                   fontWeight: 700,
-                  background: room.status === 'AVAILABLE' || !room.status ? '#d1fae5' : '#fef3c7',
-                  color: room.status === 'AVAILABLE' || !room.status ? '#047857' : '#b45309'
+                  background: formatStatus(room.status) === 'AVAILABLE' ? '#d1fae5' : '#fef3c7',
+                  color: formatStatus(room.status) === 'AVAILABLE' ? '#047857' : '#b45309'
                 }}>
-                  {room.status || 'AVAILABLE'}
+                  {formatStatus(room.status)}
                 </span>
               </div>
 
-              <div style={{ display: 'flex', gap: '1.25rem', fontSize: '0.85rem', color: '#64748b', marginBottom: '1.25rem' }}>
+              <div style={{ display: 'flex', gap: '1.25rem', fontSize: '0.85rem', color: '#64748b', marginBottom: '1rem' }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}><Users size={16} /> Max {room.capacity || 2} Guests</span>
                 <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}><Hotel size={16} /> Hotel #{room.hotelId}</span>
               </div>
+
+              {room.description && (
+                <p style={{ fontSize: '0.85rem', color: '#475569', lineHeight: '1.55', marginBottom: '1rem' }}>{room.description}</p>
+              )}
 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #f1f5f9', paddingTop: '1rem' }}>
                 <div>

@@ -101,6 +101,16 @@ export const api = {
   getRoomsByHotel: async (hotelId) =>
     dedupedGet(`${API_BASE_URL}/hotels/${hotelId}/rooms`),
   getRooms: async () => dedupedGet(`${API_BASE_URL}/rooms`),
+  getAvailableRooms: async (hotelId, checkIn, checkOut, guests) => {
+    const params = new URLSearchParams();
+    if (checkIn) params.set('checkIn', checkIn);
+    if (checkOut) params.set('checkOut', checkOut);
+    if (guests) params.set('guests', guests);
+    const qs = params.toString();
+    return dedupedGet(
+      `${API_BASE_URL}/hotels/${hotelId}/available-rooms${qs ? `?${qs}` : ''}`
+    );
+  },
 
   // Bookings
   createBooking: async (bookingData) => {
@@ -132,10 +142,16 @@ export const api = {
     return handleResponse(res);
   },
   cancelBooking: async (id) => {
-    const res = await safeFetch(`${API_BASE_URL}/bookings/${id}`, {
+    const res = await safeFetch(`${API_BASE_URL}/bookings/${id}/cancel`, {
       method: 'PUT',
       headers: getHeaders(),
-      body: JSON.stringify({ status: 'CANCELLED' }),
+    });
+    return handleResponse(res);
+  },
+  checkoutBooking: async (id) => {
+    const res = await safeFetch(`${API_BASE_URL}/bookings/${id}/checkout`, {
+      method: 'PUT',
+      headers: getHeaders(),
     });
     return handleResponse(res);
   },

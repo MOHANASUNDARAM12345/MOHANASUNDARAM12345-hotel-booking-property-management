@@ -1,8 +1,11 @@
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 
-// Deployed Spring Boot API on Render.
-const RENDER_API_ORIGIN = 'https://mohanasundaram12345-hotel-booking-v844.onrender.com'
+// Local development targets the Spring Boot backend running on localhost:8080.
+// Production builds use VITE_API_BASE_URL (see .env.production), which points
+// at the deployed Render backend.
+const DEV_API_ORIGIN =
+  process.env.VITE_DEV_PROXY_TARGET || 'http://localhost:8080'
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -12,20 +15,12 @@ export default defineConfig({
     strictPort: true,
     proxy: {
       // In local development the browser calls /api on the Vite dev server,
-      // which proxies to Render. This is same-origin from the browser's
-      // perspective, so it works even before CORS is configured on the API.
+      // which proxies to the local Spring Boot backend. This keeps the browser
+      // on a single origin, so CORS is not required for local development.
       '/api': {
-        target: RENDER_API_ORIGIN,
+        target: DEV_API_ORIGIN,
         changeOrigin: true,
-        secure: true,
-        // The browser sends an Origin header even for same-origin POSTs.
-        // Strip it before forwarding so the API's CORS filter never rejects
-        // local development traffic while the allowlist is being configured.
-        configure: (proxy) => {
-          proxy.on('proxyReq', (proxyReq) => {
-            proxyReq.removeHeader('origin')
-          })
-        },
+        secure: false,
       },
     },
   },

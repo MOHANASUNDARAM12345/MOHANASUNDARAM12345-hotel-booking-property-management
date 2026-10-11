@@ -27,7 +27,7 @@ export const OwnerDashboard = () => {
   // Form Fields
   const [propForm, setPropForm] = useState({ propertyName: '', propertyType: 'Hotel', city: '', address: '', description: '' });
   const [hotelForm, setHotelForm] = useState({ propertyId: '', hotelName: '', location: '', category: 'LUXURY', price: 2500, description: '', imageUrl: '' });
-  const [roomForm, setRoomForm] = useState({ hotelId: '', roomNumber: '', roomType: 'Deluxe', price: 2000, capacity: 2, status: 'AVAILABLE' });
+  const [roomForm, setRoomForm] = useState({ hotelId: '', roomNumber: '', roomType: 'Deluxe', price: 2000, capacity: 2, status: 'AVAILABLE', description: '' });
   const [staffForm, setStaffForm] = useState({ hotelId: '', name: '', role: 'Manager', phone: '', email: '' });
   const [couponForm, setCouponForm] = useState({ code: '', discountPercentage: 10, maxDiscount: 500, minBookingAmount: 1000 });
 
@@ -91,7 +91,7 @@ export const OwnerDashboard = () => {
     try {
       await api.createRoom({ ...roomForm, hotelId: parseInt(roomForm.hotelId || (hotels[0]?.hotelId || 1)) });
       setShowRoomModal(false);
-      setRoomForm({ hotelId: '', roomNumber: '', roomType: 'Deluxe', price: 2000, capacity: 2, status: 'AVAILABLE' });
+      setRoomForm({ hotelId: '', roomNumber: '', roomType: 'Deluxe', price: 2000, capacity: 2, status: 'AVAILABLE', description: '' });
       loadData();
     } catch (err) {
       alert(err.message || 'Error creating room');
@@ -416,7 +416,15 @@ export const OwnerDashboard = () => {
               </select>
               <input type="text" required placeholder="Room Number (e.g. 101, 202)" value={roomForm.roomNumber} onChange={e => setRoomForm({ ...roomForm, roomNumber: e.target.value })} style={{ padding: '0.65rem', borderRadius: '8px', border: '1px solid #cbd5e1' }} />
               <input type="text" placeholder="Room Type (Deluxe, Suite, Standard)" value={roomForm.roomType} onChange={e => setRoomForm({ ...roomForm, roomType: e.target.value })} style={{ padding: '0.65rem', borderRadius: '8px', border: '1px solid #cbd5e1' }} />
-              <input type="number" required placeholder="Price per Night" value={roomForm.price} onChange={e => setRoomForm({ ...roomForm, price: e.target.value })} style={{ padding: '0.65rem', borderRadius: '8px', border: '1px solid #cbd5e1' }} />
+              <input type="number" required min="1" placeholder="Price per Night" value={roomForm.price} onChange={e => setRoomForm({ ...roomForm, price: e.target.value })} style={{ padding: '0.65rem', borderRadius: '8px', border: '1px solid #cbd5e1' }} />
+              <input type="number" required min="1" max="20" placeholder="Capacity (max guests)" value={roomForm.capacity} onChange={e => setRoomForm({ ...roomForm, capacity: e.target.value })} style={{ padding: '0.65rem', borderRadius: '8px', border: '1px solid #cbd5e1' }} />
+              <select value={roomForm.status} onChange={e => setRoomForm({ ...roomForm, status: e.target.value })} style={{ padding: '0.65rem', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
+                <option value="AVAILABLE">AVAILABLE</option>
+                <option value="BOOKED">BOOKED</option>
+                <option value="MAINTENANCE">MAINTENANCE</option>
+                <option value="OUT_OF_SERVICE">OUT_OF_SERVICE</option>
+              </select>
+              <textarea rows="2" placeholder="Room description (amenities, bed type, view...)" value={roomForm.description} onChange={e => setRoomForm({ ...roomForm, description: e.target.value })} style={{ padding: '0.65rem', borderRadius: '8px', border: '1px solid #cbd5e1', resize: 'vertical' }} />
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
                 <button type="button" onClick={() => setShowRoomModal(false)} style={{ background: '#f1f5f9', padding: '0.6rem 1rem', borderRadius: '8px' }}>Cancel</button>
                 <button type="submit" style={{ background: '#4f46e5', color: 'white', padding: '0.6rem 1.25rem', borderRadius: '8px', fontWeight: 700 }}>Save Room</button>

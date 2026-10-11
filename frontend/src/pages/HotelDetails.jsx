@@ -1,9 +1,17 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import { getHotelImage, fallbackImage } from '../utils/hotelImages';
 import { useAuth } from '../context/AuthContext';
-import { MapPin, Star, Heart, Calendar, Users, ShieldCheck, MessageSquare, Check, Sparkles, Building } from 'lucide-react';
+import { MapPin, Star, Heart, Calendar, MessageSquare, Check, Sparkles, BedDouble, RefreshCw, AlertCircle } from 'lucide-react';
+
+const NIGHT_MS = 24 * 60 * 60 * 1000;
+
+const nightsBetween = (checkIn, checkOut) => {
+  if (!checkIn || !checkOut) return 0;
+  const diff = Math.round((new Date(checkOut) - new Date(checkIn)) / NIGHT_MS);
+  return diff > 0 ? diff : 0;
+};
 
 export const HotelDetails = () => {
   const { id } = useParams();
@@ -11,13 +19,17 @@ export const HotelDetails = () => {
   const navigate = useNavigate();
 
   const [hotel, setHotel] = useState(null);
+  const [allRooms, setAllRooms] = useState([]);
   const [rooms, setRooms] = useState([]);
   const [services, setServices] = useState([]);
   const [reviews, setReviews] = useState([]);
   const [isFavorite, setIsFavorite] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [roomLoading, setRoomLoading] = useState(false);
+  const [roomError, setRoomError] = useState('');
+  const [availabilityChecked, setAvailabilityChecked] = useState(false);
 
-  // Booking Modal State
+  // Booking / availability Modal State
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [checkInDate, setCheckInDate] = useState('');
   const [checkOutDate, setCheckOutDate] = useState('');
@@ -31,6 +43,9 @@ export const HotelDetails = () => {
   const [newComment, setNewComment] = useState('');
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
 
+  const today = new Date().toISOString().slice(0, 10);
+  const nights = useMemo(() => nightsBetween(checkInDate, checkOutDate), [checkInDate, checkOutDate]);
+
   useEffect(() => {
     setLoading(true);
     Promise.all([
@@ -39,11 +54,16 @@ export const HotelDetails = () => {
       api.getServicesByHotel(id).catch(() => []),
       api.getReviewsByHotel(id).catch(() => []),
     ]).then(([hotelData, roomData, serviceData, reviewData]) => {
+      const roomList = Array.isArray(roomData) ? roomData : [];
       setHotel(hotelData);
-      setRooms(Array.isArray(roomData) ? roomData : []);
+      setAllRooms(roomList);
+      setRooms(roomList);
       setServices(Array.isArray(serviceData) ? serviceData : []);
       setReviews(Array.isArray(reviewData) ? reviewData : []);
-    }).catch(err => console.error(err))
+    }).catch(err => {
+      console.error(err);
+      setRoomError('Unable to load rooms. Please try again later.');
+    })
       .finally(() => setLoading(false));
 
     if (user && user.userId) {
@@ -75,10 +95,53 @@ export const HotelDetails = () => {
     }
   };
 
+  const handleCheckAvailability = async (e) => {
+    e.preventDefault();
+    setRoomError('');
+
+    if (!checkInDate || !checkOutDate) {
+      setRoomError('Please select both check-in and check-out dates.');
+      return;
+    }
+    if (checkInDate >= checkOutDate) {
+      setRoomError('Check-out date must be after the check-in date.');
+      return;
+    }
+    if (checkInDate < today) {
+      setRoomError('Check-in date cannot be in the past.');
+      return;
+    }
+
+    setRoomLoading(true);
+    try {
+      const available = await api.getAvailableRooms(id, checkInDate, checkOutDate, guests);
+      setRooms(Array.isArray(available) ? available : []);
+      setAvailabilityChecked(true);
+    } catch (err) {
+      setRoomError(err.message || 'Could not check room availability. Please try again.');
+    } finally {
+      setRoomLoading(false);
+    }
+  };
+
+  const handleResetAvailability = () => {
+    setRooms(allRooms);
+    setAvailabilityChecked(false);
+    setRoomError('');
+  };
+
   const handleBookingSubmit = async (e) => {
     e.preventDefault();
     if (!user) {
       navigate('/login');
+      return;
+    }
+    if (!checkInDate || !checkOutDate || checkInDate >= checkOutDate) {
+      setBookingError('Please enter valid check-in and check-out dates.');
+      return;
+    }
+    if (nights <= 0) {
+      setBookingError('Check-out date must be after the check-in date.');
       return;
     }
     setBookingError('');
@@ -127,6 +190,8 @@ export const HotelDetails = () => {
       setReviewSubmitting(false);
     }
   };
+
+  const formatStatus = (status) => (status || 'AVAILABLE').toUpperCase();
 
   if (loading) {
     return <div className="container" style={{ padding: '4rem', textAlign: 'center', color: '#64748b' }}>Loading hotel details...</div>;
@@ -237,32 +302,171 @@ export const HotelDetails = () => {
 
           {/* Available Rooms */}
           <div style={{ background: 'white', padding: '2rem', borderRadius: '16px', border: '1px solid #e2e8f0', marginBottom: '2rem' }}>
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '1.25rem', color: '#0f172a' }}>Available Rooms</h3>
-            {rooms.length === 0 ? (
-              <p style={{ color: '#64748b' }}>No active rooms registered for this hotel yet.</p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', marginBottom: '1.25rem' }}>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <BedDouble size={20} color="#4f46e5" /> Available Rooms
+              </h3>
+
+              {availabilityChecked && (
+                <button
+                  onClick={handleResetAvailability}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.35rem',
+                    background: '#f1f5f9',
+                    color: '#475569',
+                    padding: '0.45rem 1rem',
+                    borderRadius: '8px',
+                    fontWeight: 700,
+                    fontSize: '0.8rem'
+                  }}
+                >
+                  <RefreshCw size={14} /> Show All Rooms
+                </button>
+              )}
+            </div>
+
+            {/* Availability Checker */}
+            <form onSubmit={handleCheckAvailability} style={{
+              background: '#f8fafc',
+              border: '1px solid #e2e8f0',
+              borderRadius: '12px',
+              padding: '1.25rem',
+              marginBottom: '1.5rem'
+            }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '1rem', alignItems: 'flex-end' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '0.3rem' }}>
+                    Check-in Date
+                  </label>
+                  <input
+                    type="date"
+                    min={today}
+                    required
+                    value={checkInDate}
+                    onChange={(e) => setCheckInDate(e.target.value)}
+                    style={{ width: '100%', padding: '0.6rem', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '0.3rem' }}>
+                    Check-out Date
+                  </label>
+                  <input
+                    type="date"
+                    min={checkInDate || today}
+                    required
+                    value={checkOutDate}
+                    onChange={(e) => setCheckOutDate(e.target.value)}
+                    style={{ width: '100%', padding: '0.6rem', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '0.3rem' }}>
+                    Guests
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="10"
+                    value={guests}
+                    onChange={(e) => setGuests(e.target.value)}
+                    style={{ width: '100%', padding: '0.6rem', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={roomLoading}
+                  style={{
+                    background: '#4f46e5',
+                    color: 'white',
+                    padding: '0.6rem 1.5rem',
+                    borderRadius: '8px',
+                    fontWeight: 700,
+                    fontSize: '0.9rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.4rem',
+                    justifyContent: 'center'
+                  }}
+                >
+                  <Calendar size={16} /> {roomLoading ? 'Checking...' : 'Check Availability'}
+                </button>
+              </div>
+
+              {nights > 0 && !availabilityChecked && (
+                <p style={{ fontSize: '0.82rem', color: '#059669', fontWeight: 700, marginTop: '0.75rem' }}>
+                  {nights} night(s) selected · click "Check Availability" to see only rooms free on these dates.
+                </p>
+              )}
+
+              {roomError && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: '#fef2f2', color: '#991b1b', padding: '0.65rem 0.85rem', borderRadius: '8px', fontSize: '0.85rem', marginTop: '0.75rem' }}>
+                  <AlertCircle size={16} /> {roomError}
+                </div>
+              )}
+            </form>
+
+            {availabilityChecked && (
+              <div style={{ fontSize: '0.85rem', color: '#047857', fontWeight: 700, marginBottom: '1rem' }}>
+                Showing {rooms.length} room(s) available from {checkInDate} to {checkOutDate} for {guests} guest(s).
+              </div>
+            )}
+
+            {roomLoading ? (
+              <div style={{ textAlign: 'center', padding: '2rem', color: '#64748b' }}>Checking room availability...</div>
+            ) : rooms.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '2.5rem 1.5rem', borderRadius: '12px', border: '1px dashed #cbd5e1', background: '#f8fafc' }}>
+                <BedDouble size={40} color="#94a3b8" style={{ marginBottom: '0.75rem' }} />
+                <p style={{ color: '#475569', fontWeight: 700 }}>
+                  {availabilityChecked ? 'No rooms available for the selected dates.' : 'No active rooms registered for this hotel yet.'}
+                </p>
+                {availabilityChecked && (
+                  <button onClick={handleResetAvailability} style={{ marginTop: '0.75rem', background: '#eef2ff', color: '#4f46e5', padding: '0.5rem 1.25rem', borderRadius: '8px', fontWeight: 700, fontSize: '0.85rem' }}>
+                    Try Different Dates
+                  </button>
+                )}
+              </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                 {rooms.map(room => (
                   <div key={room.roomId} style={{
                     display: 'flex',
+                    flexWrap: 'wrap',
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     padding: '1.25rem',
                     borderRadius: '12px',
                     border: '1px solid #cbd5e1',
-                    background: '#f8fafc'
+                    background: '#f8fafc',
+                    gap: '1rem'
                   }}>
-                    <div>
-                      <div style={{ fontSize: '1.05rem', fontWeight: 700, color: '#0f172a' }}>
-                        Room {room.roomNumber} ({room.roomType || 'Standard'})
+                    <div style={{ flex: '1 1 280px' }}>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.6rem' }}>
+                        <span style={{ fontSize: '1.05rem', fontWeight: 700, color: '#0f172a' }}>
+                          Room {room.roomNumber} ({room.roomType || 'Standard'})
+                        </span>
+                        <span style={{
+                          padding: '0.2rem 0.6rem',
+                          borderRadius: '20px',
+                          fontSize: '0.72rem',
+                          fontWeight: 700,
+                          background: formatStatus(room.status) === 'AVAILABLE' ? '#d1fae5' : '#fef3c7',
+                          color: formatStatus(room.status) === 'AVAILABLE' ? '#047857' : '#b45309'
+                        }}>
+                          {formatStatus(room.status)}
+                        </span>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '0.3rem', fontSize: '0.85rem', color: '#64748b' }}>
                         <span>Capacity: {room.capacity || 2} Guests</span>
-                        <span>•</span>
-                        <span style={{ color: room.status === 'AVAILABLE' || !room.status ? '#059669' : '#d97706', fontWeight: 700 }}>
-                          {room.status || 'AVAILABLE'}
-                        </span>
+                        {nights > 0 && (
+                          <span style={{ color: '#0f172a', fontWeight: 700 }}>~ ₹{nights * (room.price || hotel.price || 2000)} total for {nights} night(s)</span>
+                        )}
                       </div>
+                      {room.description && (
+                        <p style={{ fontSize: '0.85rem', color: '#475569', lineHeight: '1.5', marginTop: '0.4rem' }}>{room.description}</p>
+                      )}
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
@@ -408,9 +612,12 @@ export const HotelDetails = () => {
             <h3 style={{ fontSize: '1.35rem', fontWeight: 800, marginBottom: '0.5rem', color: '#0f172a' }}>
               Book Room {selectedRoom.roomNumber}
             </h3>
-            <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
-              {hotel.hotelName} • ₹{selectedRoom.price || hotel.price || 2000} per night
+            <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '1rem' }}>
+              {hotel.hotelName} • ₹{selectedRoom.price || hotel.price || 2000} per night • {selectedRoom.roomType || 'Standard'}
             </p>
+            {selectedRoom.description && (
+              <p style={{ color: '#475569', fontSize: '0.85rem', marginBottom: '1rem', lineHeight: '1.5' }}>{selectedRoom.description}</p>
+            )}
 
             {bookingError && (
               <div style={{ background: '#fef2f2', color: '#991b1b', padding: '0.75rem', borderRadius: '8px', fontSize: '0.85rem', marginBottom: '1rem' }}>
@@ -432,6 +639,7 @@ export const HotelDetails = () => {
                   </label>
                   <input
                     type="date"
+                    min={today}
                     required
                     value={checkInDate}
                     onChange={(e) => setCheckInDate(e.target.value)}
@@ -444,6 +652,7 @@ export const HotelDetails = () => {
                   </label>
                   <input
                     type="date"
+                    min={checkInDate || today}
                     required
                     value={checkOutDate}
                     onChange={(e) => setCheckOutDate(e.target.value)}
@@ -459,13 +668,30 @@ export const HotelDetails = () => {
                 <input
                   type="number"
                   min="1"
-                  max={selectedRoom.capacity || 4}
+                  max={selectedRoom.capacity || 10}
                   required
                   value={guests}
                   onChange={(e) => setGuests(e.target.value)}
                   style={{ width: '100%', padding: '0.65rem', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
                 />
               </div>
+
+              {nights > 0 && (
+                <div style={{
+                  background: '#eef2ff',
+                  color: '#4338ca',
+                  padding: '0.85rem 1rem',
+                  borderRadius: '10px',
+                  fontSize: '0.9rem',
+                  fontWeight: 700,
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}>
+                  <span>{nights} night(s) × ₹{selectedRoom.price || hotel.price || 2000}</span>
+                  <span style={{ fontSize: '1.1rem' }}>₹{nights * (selectedRoom.price || hotel.price || 2000)}</span>
+                </div>
+              )}
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem' }}>
                 <button

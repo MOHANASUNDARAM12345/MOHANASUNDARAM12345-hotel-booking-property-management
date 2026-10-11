@@ -51,6 +51,16 @@ public class BookingController {
         return ResponseEntity.ok(bookingService.calculateRefundEstimate(id));
     }
 
+    @PutMapping("/{id}/cancel")
+    public ResponseEntity<Booking> cancelBooking(@PathVariable Integer id) {
+        return ResponseEntity.ok(bookingService.cancelBooking(id));
+    }
+
+    @PutMapping("/{id}/checkout")
+    public ResponseEntity<Booking> checkoutBooking(@PathVariable Integer id) {
+        return ResponseEntity.ok(bookingService.checkoutBooking(id));
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<Booking> updateBooking(
             @PathVariable Integer id,
