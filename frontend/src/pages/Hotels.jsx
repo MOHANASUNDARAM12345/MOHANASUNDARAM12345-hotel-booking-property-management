@@ -1,183 +1,276 @@
-import React, { useEffect, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
-import { api } from '../services/api';
-import { Search, MapPin, Star, Building2, Filter } from 'lucide-react';
+```jsx
+import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import {
+  MapPin,
+  Star,
+  Search,
+  SlidersHorizontal,
+  ArrowRight,
+  Hotel as HotelIcon,
+} from "lucide-react";
+import api from "../services/api";
+import "./Hotels.css";
 
-export const Hotels = () => {
+const hotelImages = {
+  "Green Valley Hotel": "/images/green-valley-resort.jpg",
+  "Sunrise Residency Hotel": "/images/grand-palace-hotel.jpg",
+  "Royal Palm Suites": "/images/orchid-boutique-hotel.jpg",
+  "Blue Sky Lodge": "/images/skyline-inn.jpg",
+  "Hill View Retreat": "/images/sunset-beach-resort.jpg",
+  "Grand Palace Hotel": "/images/grand-palace-hotel.jpg",
+  "Green Valley Resort": "/images/green-valley-resort.jpg",
+  "Orchid Boutique Hotel": "/images/orchid-boutique-hotel.jpg",
+  "Skyline Inn": "/images/skyline-inn.jpg",
+  "Sunset Beach Resort": "/images/sunset-beach-resort.jpg",
+};
+
+const fallbackImage = "/images/grand-palace-hotel.jpg";
+const categories = ["All", "Luxury", "Premium", "Budget", "Resort"];
+
+function Hotels() {
   const [hotels, setHotels] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("All");
   const [loading, setLoading] = useState(true);
-  const [searchParams] = useSearchParams();
-  const [searchTerm, setSearchTerm] = useState(searchParams.get('city') || '');
-  const [selectedCategory, setSelectedCategory] = useState('ALL');
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    api.getHotels()
-      .then(data => setHotels(Array.isArray(data) ? data : []))
-      .catch(err => console.error(err))
-      .finally(() => setLoading(false));
+    let active = true;
+
+    async function fetchHotels() {
+      try {
+        setLoading(true);
+        setError("");
+
+        const response = await api.getHotels();
+
+        const hotelData = Array.isArray(response)
+          ? response
+          : Array.isArray(response?.data)
+            ? response.data
+            : [];
+
+        if (active) {
+          setHotels(hotelData);
+        }
+      } catch (err) {
+        console.error("Failed to load hotels:", err);
+        if (active) {
+          setError("Unable to load hotels. Check whether the backend is running.");
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    }
+
+    fetchHotels();
+
+    return () => {
+      active = false;
+    };
   }, []);
 
-  const filteredHotels = hotels.filter(h => {
-    const matchesSearch = !searchTerm ||
-      (h.hotelName && h.hotelName.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (h.location && h.location.toLowerCase().includes(searchTerm.toLowerCase()));
-    const matchesCategory = selectedCategory === 'ALL' || (h.category && h.category.toUpperCase() === selectedCategory);
+  const getHotelId = (hotel) =>
+    hotel.hotelId ?? hotel.id ?? hotel.propertyId;
+
+  const getHotelName = (hotel) =>
+    hotel.hotelName || hotel.name || "Hotel";
+
+  const getHotelImage = (hotel) => {
+    const name = getHotelName(hotel);
+    return hotelImages[name] || hotel.imageUrl || fallbackImage;
+  };
+
+  const filteredHotels = hotels.filter((hotel) => {
+    const name = getHotelName(hotel).toLowerCase();
+    const location = String(
+      hotel.location || hotel.city || ""
+    ).toLowerCase();
+    const category = String(
+      hotel.category || hotel.hotelType || ""
+    ).toLowerCase();
+
+    const matchesSearch =
+      name.includes(searchTerm.toLowerCase()) ||
+      location.includes(searchTerm.toLowerCase());
+
+    const matchesCategory =
+      selectedCategory === "All" ||
+      category === selectedCategory.toLowerCase();
+
     return matchesSearch && matchesCategory;
   });
 
-  return (
-    <div className="container animate-fade-in" style={{ padding: '2.5rem 1.5rem' }}>
-      <div style={{ marginBottom: '2rem' }}>
-        <h1 style={{ fontSize: '2rem', fontWeight: 800, color: '#0f172a' }}>Browse Hotels & Resorts</h1>
-        <p style={{ color: '#64748b', fontSize: '0.95rem' }}>Explore top property stays, compare rates and amenities</p>
-      </div>
+  const formatPrice = (price) =>
+    Number(price ?? 0).toLocaleString("en-IN");
 
-      {/* Filter and Search controls */}
-      <div style={{
-        background: 'white',
-        padding: '1.25rem',
-        borderRadius: '16px',
-        border: '1px solid #e2e8f0',
-        boxShadow: '0 4px 6px -1px rgba(0,0,0,0.04)',
-        display: 'flex',
-        flexWrap: 'wrap',
-        gap: '1rem',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginBottom: '2.5rem'
-      }}>
-        <div style={{ position: 'relative', flex: 1, minWidth: '260px' }}>
-          <Search size={18} color="#94a3b8" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
-          <input
-            type="text"
-            placeholder="Search by hotel name or location..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '0.65rem 0.65rem 0.65rem 2.4rem',
-              border: '1px solid #cbd5e1',
-              borderRadius: '10px',
-              fontSize: '0.9rem'
-            }}
-          />
+  if (loading) {
+    return (
+      <main className="hotels-page">
+        <div className="hotels-message">
+          <div className="hotels-spinner" />
+          <p>Loading hotels...</p>
         </div>
+      </main>
+    );
+  }
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#475569', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-            <Filter size={16} /> Category:
-          </span>
-          {['ALL', 'LUXURY', 'RESORT', 'BUDGET', 'BOUTIQUE'].map(cat => (
+  if (error) {
+    return (
+      <main className="hotels-page">
+        <div className="hotels-message">
+          <h2>Unable to load hotels</h2>
+          <p>{error}</p>
+          <button
+            className="hotels-reset-button"
+            onClick={() => window.location.reload()}
+          >
+            Try Again
+          </button>
+        </div>
+      </main>
+    );
+  }
+
+  return (
+    <main className="hotels-page">
+      <header className="hotels-header">
+        <span className="hotels-eyebrow">Find your perfect stay</span>
+        <h1 className="hotels-title">Explore Our Hotels</h1>
+        <p className="hotels-description">
+          Discover comfortable stays, beautiful destinations, and
+          places designed to make your journey memorable.
+        </p>
+      </header>
+
+      <section className="hotels-toolbar">
+        <label className="hotels-search">
+          <Search size={20} />
+          <input
+            type="search"
+            placeholder="Search hotel or location..."
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+          />
+        </label>
+
+        <div className="hotels-categories">
+          <SlidersHorizontal size={18} />
+          {categories.map((category) => (
             <button
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
-              style={{
-                padding: '0.4rem 0.85rem',
-                borderRadius: '20px',
-                fontSize: '0.8rem',
-                fontWeight: 700,
-                background: selectedCategory === cat ? '#4f46e5' : '#f1f5f9',
-                color: selectedCategory === cat ? 'white' : '#475569'
-              }}
+              key={category}
+              type="button"
+              className={
+                selectedCategory === category
+                  ? "hotels-category active"
+                  : "hotels-category"
+              }
+              onClick={() => setSelectedCategory(category)}
             >
-              {cat}
+              {category}
             </button>
           ))}
         </div>
-      </div>
+      </section>
 
-      {loading ? (
-        <div style={{ textAlign: 'center', padding: '4rem', color: '#64748b' }}>Loading hotels catalog...</div>
-      ) : filteredHotels.length === 0 ? (
-        <div style={{
-          textAlign: 'center',
-          padding: '4rem 2rem',
-          background: 'white',
-          borderRadius: '16px',
-          border: '1px dashed #cbd5e1'
-        }}>
-          <Building2 size={48} color="#94a3b8" style={{ marginBottom: '1rem' }} />
-          <h3 style={{ fontSize: '1.2rem', fontWeight: 700 }}>No Hotels Match Your Criteria</h3>
-          <p style={{ color: '#64748b', fontSize: '0.9rem', marginTop: '0.25rem' }}>Try adjusting your search location or category filter.</p>
-        </div>
-      ) : (
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-          gap: '2rem'
-        }}>
-          {filteredHotels.map(hotel => (
-            <div key={hotel.hotelId} style={{
-              background: 'white',
-              borderRadius: '16px',
-              overflow: 'hidden',
-              boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)',
-              border: '1px solid #e2e8f0',
-              display: 'flex',
-              flexDirection: 'column'
-            }}>
-              <div style={{ height: '190px', background: '#e2e8f0', position: 'relative' }}>
-                <img
-                  src={hotel.imageUrl || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=600&q=80'}
-                  alt={hotel.hotelName}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                />
-                <div style={{
-                  position: 'absolute',
-                  top: '12px',
-                  right: '12px',
-                  background: 'rgba(15, 23, 42, 0.75)',
-                  backdropFilter: 'blur(4px)',
-                  color: '#fbbf24',
-                  padding: '0.25rem 0.6rem',
-                  borderRadius: '20px',
-                  fontSize: '0.8rem',
-                  fontWeight: 700,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.25rem'
-                }}>
-                  <Star size={14} fill="#fbbf24" /> {hotel.rating || 4.5}
+      <p className="hotels-count">
+        Showing {filteredHotels.length} of {hotels.length} hotels
+      </p>
+
+      <section className="hotels-grid">
+        {filteredHotels.length === 0 ? (
+          <div className="hotels-empty">
+            <HotelIcon size={38} />
+            <h3>No hotels found</h3>
+            <p>Try a different search term or category.</p>
+          </div>
+        ) : (
+          filteredHotels.map((hotel, index) => {
+            const hotelId = getHotelId(hotel);
+            const hotelName = getHotelName(hotel);
+            const location =
+              hotel.location || hotel.city || "Location unavailable";
+            const category =
+              hotel.category || hotel.hotelType || "Hotel";
+            const price =
+              hotel.pricePerNight ??
+              hotel.price ??
+              hotel.basePrice ??
+              0;
+            const rating = hotel.rating ?? 4.5;
+
+            return (
+              <article
+                className="hotel-card"
+                key={hotelId ?? index}
+              >
+                <div className="hotel-image-wrap">
+                  <img
+                    className="hotel-image"
+                    src={getHotelImage(hotel)}
+                    alt={hotelName}
+                    onError={(event) => {
+                      event.currentTarget.onerror = null;
+                      event.currentTarget.src = fallbackImage;
+                    }}
+                  />
+                  <span className="hotel-category-badge">
+                    {category}
+                  </span>
                 </div>
-              </div>
 
-              <div style={{ padding: '1.25rem', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                <div>
-                  <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#4f46e5', textTransform: 'uppercase', marginBottom: '0.25rem' }}>
-                    {hotel.category || 'Luxury Stay'}
+                <div className="hotel-content">
+                  <h2 className="hotel-name">{hotelName}</h2>
+
+                  <div className="hotel-location">
+                    <MapPin size={16} />
+                    <span>{location}</span>
                   </div>
-                  <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: '#0f172a', marginBottom: '0.4rem' }}>
-                    {hotel.hotelName}
-                  </h3>
-                  <p style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', color: '#64748b', fontSize: '0.85rem', marginBottom: '0.75rem' }}>
-                    <MapPin size={14} /> {hotel.location || 'City Center'}
-                  </p>
-                  <p style={{ fontSize: '0.85rem', color: '#475569', lineHeight: '1.5', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                    {hotel.description || 'Experience comfort and hospitality with modern amenities and scenic views.'}
-                  </p>
-                </div>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #f1f5f9', paddingTop: '1rem', marginTop: '1rem' }}>
-                  <div>
-                    <span style={{ fontSize: '1.2rem', fontWeight: 800, color: '#0f172a' }}>₹{hotel.price || 2500}</span>
-                    <span style={{ fontSize: '0.8rem', color: '#64748b' }}> / night</span>
+                  <div className="hotel-rating">
+                    <Star size={16} fill="currentColor" />
+                    <strong>{rating}</strong>
+                    <span className="hotel-rating-label">Rating</span>
                   </div>
-                  <Link to={`/hotels/${hotel.hotelId}`} style={{
-                    background: '#4f46e5',
-                    color: 'white',
-                    padding: '0.5rem 1rem',
-                    borderRadius: '8px',
-                    fontWeight: 700,
-                    fontSize: '0.85rem'
-                  }}>
-                    View Details
-                  </Link>
+
+                  <div className="hotel-card-footer">
+                    <div>
+                      <span className="hotel-price-label">
+                        Starting from
+                      </span>
+                      <div className="hotel-price">
+                        ₹{formatPrice(price)}
+                        <span className="hotel-price-unit">
+                          {" "}/ night
+                        </span>
+                      </div>
+                    </div>
+
+                    {hotelId != null ? (
+                      <Link
+                        className="hotel-view-link"
+                        to={"/hotels/" + hotelId}
+                      >
+                        View Details <ArrowRight size={16} />
+                      </Link>
+                    ) : (
+                      <span className="hotel-price-unit">
+                        Details unavailable
+                      </span>
+                    )}
+                  </div>
                 </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
+              </article>
+            );
+          })
+        )}
+      </section>
+    </main>
   );
-};
+}
+
+export default Hotels;
+```
