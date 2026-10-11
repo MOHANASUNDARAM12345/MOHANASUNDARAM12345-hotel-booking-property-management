@@ -132,35 +132,62 @@ export const HotelDetails = () => {
 
   const handleBookingSubmit = async (e) => {
     e.preventDefault();
+    if (bookingLoading || bookingSuccess) {
+      return;
+    }
     if (!user) {
       navigate('/login');
+      return;
+    }
+    if (!selectedRoom) {
+      setBookingError('Please choose a room to book.');
       return;
     }
     if (!checkInDate || !checkOutDate || checkInDate >= checkOutDate) {
       setBookingError('Please enter valid check-in and check-out dates.');
       return;
     }
+    if (checkInDate < today) {
+      setBookingError('Check-in date cannot be in the past.');
+      return;
+    }
     if (nights <= 0) {
       setBookingError('Check-out date must be after the check-in date.');
       return;
     }
+    const guestCount = parseInt(guests, 10);
+    if (!guestCount || guestCount <= 0) {
+      setBookingError('Please enter a valid number of guests.');
+      return;
+    }
+    if (selectedRoom.capacity && guestCount > selectedRoom.capacity) {
+      setBookingError(`This room allows a maximum of ${selectedRoom.capacity} guest(s).`);
+      return;
+    }
+
     setBookingError('');
     setBookingSuccess('');
     setBookingLoading(true);
 
     try {
-      await api.createBooking({
+      const created = await api.createBooking({
         userId: user.userId,
         roomId: selectedRoom.roomId,
+        hotelId: parseInt(id, 10),
         checkInDate,
         checkOutDate,
-        guests: parseInt(guests),
+        guests: guestCount,
         status: 'PENDING',
       });
-      setBookingSuccess('Booking created successfully! Redirecting to My Bookings...');
-      setTimeout(() => {
-        navigate('/my-bookings');
-      }, 1500);
+      if (created && created.bookingId) {
+        setBookingSuccess('Booking created successfully! Redirecting to My Bookings...');
+        setTimeout(() => {
+          setSelectedRoom(null);
+          navigate('/my-bookings');
+        }, 1500);
+      } else {
+        setBookingError('The server did not confirm the booking. Please try again.');
+      }
     } catch (err) {
       setBookingError(err.message || 'Failed to create booking.');
     } finally {
@@ -703,10 +730,10 @@ export const HotelDetails = () => {
                 </button>
                 <button
                   type="submit"
-                  disabled={bookingLoading}
-                  style={{ background: '#4f46e5', color: 'white', padding: '0.65rem 1.5rem', borderRadius: '8px', fontWeight: 700 }}
+                  disabled={bookingLoading || !!bookingSuccess}
+                  style={{ background: '#4f46e5', color: 'white', padding: '0.65rem 1.5rem', borderRadius: '8px', fontWeight: 700, opacity: (bookingLoading || bookingSuccess) ? 0.7 : 1 }}
                 >
-                  {bookingLoading ? 'Confirming...' : 'Confirm Booking'}
+                  {bookingLoading ? 'Confirming...' : (bookingSuccess ? 'Booked' : 'Confirm Booking')}
                 </button>
               </div>
             </form>
