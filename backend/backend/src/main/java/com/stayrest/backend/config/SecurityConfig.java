@@ -1,6 +1,7 @@
 package com.stayrest.backend.config;
 
 import com.stayrest.backend.service.CustomUserDetailsService;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -152,6 +153,30 @@ public class SecurityConfig {
                 // All other APIs require login
                 .anyRequest()
                 .authenticated()
+            )
+
+            // Return a JSON body for 401/403 instead of an empty response, so
+            // the frontend can show a meaningful message (an empty body used to
+            // break the shared response parser).
+            .exceptionHandling(ex -> ex
+                .authenticationEntryPoint((request, response, authException) -> {
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.setContentType("application/json");
+                    response.setCharacterEncoding("UTF-8");
+                    response.getWriter().write(
+                            "{\"status\":401,\"error\":\"Unauthorized\","
+                                    + "\"message\":\"Authentication is required to access this resource\"}"
+                    );
+                })
+                .accessDeniedHandler((request, response, accessDeniedException) -> {
+                    response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                    response.setContentType("application/json");
+                    response.setCharacterEncoding("UTF-8");
+                    response.getWriter().write(
+                            "{\"status\":403,\"error\":\"Forbidden\","
+                                    + "\"message\":\"You do not have permission to access this resource\"}"
+                    );
+                })
             )
 
             .addFilterBefore(
