@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { api } from '../services/api';
-import { FileText, Printer, CheckCircle, Hotel, ArrowLeft } from 'lucide-react';
+import { Printer, CheckCircle, Hotel, ArrowLeft } from 'lucide-react';
 
 export const InvoicePage = () => {
   const [searchParams] = useSearchParams();

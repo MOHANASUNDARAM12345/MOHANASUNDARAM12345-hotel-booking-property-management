@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
-import { ShieldCheck, Building, Hotel as HotelIcon, BedDouble, Users, Tag, Plus, Trash2, Edit3, Sparkles } from 'lucide-react';
+import { ShieldCheck, Building, Hotel as HotelIcon, BedDouble, Users, Tag, Plus, Trash2 } from 'lucide-react';
 
 export const OwnerDashboard = () => {
   const { user, isOwner } = useAuth();
@@ -12,9 +12,7 @@ export const OwnerDashboard = () => {
   const [properties, setProperties] = useState([]);
   const [hotels, setHotels] = useState([]);
   const [rooms, setRooms] = useState([]);
-  const [staffList, setStaffList] = useState([]);
   const [coupons, setCoupons] = useState([]);
-  const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Form Modals
@@ -43,18 +41,16 @@ export const OwnerDashboard = () => {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [pData, hData, rData, cData, sData] = await Promise.all([
+      const [pData, hData, rData, cData] = await Promise.all([
         api.getProperties().catch(() => []),
         api.getHotels().catch(() => []),
         api.getRooms().catch(() => []),
         api.getCoupons().catch(() => []),
-        api.getServicesByHotel(1).catch(() => []),
       ]);
       setProperties(Array.isArray(pData) ? pData : []);
       setHotels(Array.isArray(hData) ? hData : []);
       setRooms(Array.isArray(rData) ? rData : []);
       setCoupons(Array.isArray(cData) ? cData : []);
-      setServices(Array.isArray(sData) ? sData : []);
     } catch (err) {
       console.error(err);
     } finally {

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
-import { User, Mail, Lock, Phone, Shield, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { User, Mail, Lock, Phone, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 export const Signup = () => {
   const [name, setName] = useState('');

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { api } from '../services/api';
-import { MessageSquare, Send, Sparkles, X, Globe, HelpCircle } from 'lucide-react';
+import { Send, Sparkles, X, Globe, HelpCircle } from 'lucide-react';
 
 export const GuestAssistantWidget = () => {
   const [isOpen, setIsOpen] = useState(false);

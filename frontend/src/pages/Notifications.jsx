@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { Bell, CheckCircle2, Clock } from 'lucide-react';
+import { Bell, Clock } from 'lucide-react';
 
 export const Notifications = () => {
   const { user } = useAuth();

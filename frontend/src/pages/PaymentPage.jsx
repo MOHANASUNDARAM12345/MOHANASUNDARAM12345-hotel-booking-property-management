@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
-import { CreditCard, Smartphone, Landmark, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { CreditCard, Smartphone, Landmark, ShieldCheck } from 'lucide-react';
 
 export const PaymentPage = () => {
   const [searchParams] = useSearchParams();
