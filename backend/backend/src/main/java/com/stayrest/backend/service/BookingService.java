@@ -222,35 +222,42 @@ public class BookingService {
             throw new IllegalArgumentException("Check-in date cannot be in the past");
         }
 
-        if (booking.getRoomId() != null) {
-            Optional<Room> roomOpt = roomRepository.findById(booking.getRoomId());
-            if (roomOpt.isPresent()) {
-                Room room = roomOpt.get();
-                if (room.getStatus() != null &&
-                        ("MAINTENANCE".equalsIgnoreCase(room.getStatus())
-                                || "OUT_OF_SERVICE".equalsIgnoreCase(room.getStatus()))) {
-                    throw new IllegalArgumentException("Room " + room.getRoomNumber() + " is currently under maintenance and cannot be booked");
-                }
-                if (room.getCapacity() != null && booking.getGuests() > room.getCapacity()) {
-                    throw new IllegalArgumentException("Selected room capacity is " + room.getCapacity() + " guests, but " + booking.getGuests() + " guests requested");
-                }
-            }
+        if (booking.getRoomId() == null) {
+            throw new IllegalArgumentException("A room must be selected");
+        }
 
-            // Check for double booking / overlapping dates. Runs inside the
-            // transaction so the pessimistic lock in the repository prevents
-            // two concurrent requests from booking the same room.
-            List<Booking> overlaps = bookingRepository.findOverlappingBookings(
-                    booking.getRoomId(),
-                    booking.getCheckInDate(),
-                    booking.getCheckOutDate()
-            );
+        Room room = roomRepository.findById(booking.getRoomId())
+                .orElseThrow(() -> new IllegalArgumentException("Selected room does not exist"));
 
-            boolean isOverlapping = overlaps.stream()
-                    .anyMatch(b -> currentBookingId == null || !b.getBookingId().equals(currentBookingId));
+        // The room must belong to the hotel the guest booked from.
+        if (booking.getHotelId() != null && room.getHotelId() != null
+                && !room.getHotelId().equals(booking.getHotelId())) {
+            throw new IllegalArgumentException("Selected room does not belong to this hotel");
+        }
 
-            if (isOverlapping) {
-                throw new IllegalArgumentException("Room is already booked for the selected dates");
-            }
+        if (room.getStatus() != null &&
+                ("MAINTENANCE".equalsIgnoreCase(room.getStatus())
+                        || "OUT_OF_SERVICE".equalsIgnoreCase(room.getStatus()))) {
+            throw new IllegalArgumentException("Room " + room.getRoomNumber() + " is currently under maintenance and cannot be booked");
+        }
+        if (room.getCapacity() != null && booking.getGuests() > room.getCapacity()) {
+            throw new IllegalArgumentException("Selected room capacity is " + room.getCapacity() + " guests, but " + booking.getGuests() + " guests requested");
+        }
+
+        // Check for double booking / overlapping dates. Runs inside the
+        // transaction so the pessimistic lock in the repository prevents
+        // two concurrent requests from booking the same room.
+        List<Booking> overlaps = bookingRepository.findOverlappingBookings(
+                booking.getRoomId(),
+                booking.getCheckInDate(),
+                booking.getCheckOutDate()
+        );
+
+        boolean isOverlapping = overlaps.stream()
+                .anyMatch(b -> currentBookingId == null || !b.getBookingId().equals(currentBookingId));
+
+        if (isOverlapping) {
+            throw new IllegalArgumentException("Room is already booked for the selected dates");
         }
     }
 }

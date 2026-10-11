@@ -37,6 +37,13 @@ public class Booking {
     @Column(name = "total_amount")
     private Double totalAmount;
 
+    /**
+     * Not persisted: the hotel the guest selected when booking. It is only used
+     * to validate that the requested room actually belongs to that hotel.
+     */
+    @Transient
+    private Integer hotelId;
+
     public Booking() {
     }
 
@@ -117,5 +124,13 @@ public class Booking {
 
     public void setTotalAmount(Double totalAmount) {
         this.totalAmount = totalAmount;
+    }
+
+    public Integer getHotelId() {
+        return hotelId;
+    }
+
+    public void setHotelId(Integer hotelId) {
+        this.hotelId = hotelId;
     }
 }

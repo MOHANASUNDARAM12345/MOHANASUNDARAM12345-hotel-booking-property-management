@@ -34,12 +34,23 @@ class BookingServiceTest {
     private BookingService bookingService;
 
     private Booking validBooking;
+    private Room validRoom;
 
     @BeforeEach
     void setUp() {
+        validRoom = new Room();
+        validRoom.setRoomId(10);
+        validRoom.setHotelId(1);
+        validRoom.setRoomNumber("101");
+        validRoom.setRoomType("Standard");
+        validRoom.setStatus("AVAILABLE");
+        validRoom.setPrice(1500.0);
+        validRoom.setCapacity(2);
+
         validBooking = new Booking();
         validBooking.setUserId(1);
         validBooking.setRoomId(10);
+        validBooking.setHotelId(1);
         validBooking.setCheckInDate(LocalDate.now().plusDays(1));
         validBooking.setCheckOutDate(LocalDate.now().plusDays(3));
         validBooking.setGuests(2);
@@ -48,6 +59,7 @@ class BookingServiceTest {
 
     @Test
     void testCreateBookingSuccess() {
+        when(roomRepository.findById(10)).thenReturn(Optional.of(validRoom));
         when(bookingRepository.findOverlappingBookings(anyInt(), any(), any())).thenReturn(Collections.emptyList());
         when(bookingRepository.save(any(Booking.class))).thenAnswer(i -> i.getArgument(0));
 
@@ -86,6 +98,7 @@ class BookingServiceTest {
         Booking existing = new Booking();
         existing.setBookingId(99);
 
+        when(roomRepository.findById(10)).thenReturn(Optional.of(validRoom));
         when(bookingRepository.findOverlappingBookings(anyInt(), any(), any()))
                 .thenReturn(List.of(existing));
 
@@ -94,5 +107,40 @@ class BookingServiceTest {
         });
 
         assertEquals("Room is already booked for the selected dates", exception.getMessage());
+    }
+
+    @Test
+    void testMissingRoomThrowsException() {
+        when(roomRepository.findById(10)).thenReturn(Optional.empty());
+
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> {
+            bookingService.createBooking(validBooking);
+        });
+
+        assertEquals("Selected room does not exist", exception.getMessage());
+    }
+
+    @Test
+    void testRoomFromAnotherHotelThrowsException() {
+        validBooking.setHotelId(2); // room 10 belongs to hotel 1
+        when(roomRepository.findById(10)).thenReturn(Optional.of(validRoom));
+
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> {
+            bookingService.createBooking(validBooking);
+        });
+
+        assertEquals("Selected room does not belong to this hotel", exception.getMessage());
+    }
+
+    @Test
+    void testCapacityExceededThrowsException() {
+        validBooking.setGuests(5); // room capacity is 2
+        when(roomRepository.findById(10)).thenReturn(Optional.of(validRoom));
+
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> {
+            bookingService.createBooking(validBooking);
+        });
+
+        assertTrue(exception.getMessage().contains("capacity"));
     }
 }
