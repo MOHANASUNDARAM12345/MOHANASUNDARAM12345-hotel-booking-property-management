@@ -1,7 +1,7 @@
-```jsx
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { api } from "../services/api";
+import { getHotelImage, fallbackImage } from "../utils/hotelImages";
 import {
   Search,
   MapPin,
@@ -12,21 +12,6 @@ import {
   Calendar,
   ArrowRight,
 } from "lucide-react";
-
-const hotelImages = {
-  "Green Valley Hotel": "/images/green-valley-resort.jpg",
-  "Sunrise Residency Hotel": "/images/grand-palace-hotel.jpg",
-  "Royal Palm Suites": "/images/orchid-boutique-hotel.jpg",
-  "Blue Sky Lodge": "/images/skyline-inn.jpg",
-  "Hill View Retreat": "/images/sunset-beach-resort.jpg",
-  "Grand Palace Hotel": "/images/grand-palace-hotel.jpg",
-  "Green Valley Resort": "/images/green-valley-resort.jpg",
-  "Orchid Boutique Hotel": "/images/orchid-boutique-hotel.jpg",
-  "Skyline Inn": "/images/skyline-inn.jpg",
-  "Sunset Beach Resort": "/images/sunset-beach-resort.jpg",
-};
-
-const fallbackImage = "/images/grand-palace-hotel.jpg";
 
 export const Home = () => {
   const [hotels, setHotels] = useState([]);
@@ -77,11 +62,6 @@ export const Home = () => {
     } else {
       navigate("/hotels");
     }
-  };
-
-  const getHotelImage = (hotel) => {
-    const name = hotel.hotelName || hotel.name || "";
-    return hotelImages[name] || hotel.imageUrl || fallbackImage;
   };
 
   return (
@@ -546,4 +526,3 @@ export const Home = () => {
 };
 
 export default Home;
-```

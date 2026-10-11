@@ -1,4 +1,3 @@
-```jsx
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -9,23 +8,10 @@ import {
   ArrowRight,
   Hotel as HotelIcon,
 } from "lucide-react";
-import api from "../services/api";
+import { api } from "../services/api";
+import { getHotelImage, fallbackImage } from "../utils/hotelImages";
 import "./Hotels.css";
 
-const hotelImages = {
-  "Green Valley Hotel": "/images/green-valley-resort.jpg",
-  "Sunrise Residency Hotel": "/images/grand-palace-hotel.jpg",
-  "Royal Palm Suites": "/images/orchid-boutique-hotel.jpg",
-  "Blue Sky Lodge": "/images/skyline-inn.jpg",
-  "Hill View Retreat": "/images/sunset-beach-resort.jpg",
-  "Grand Palace Hotel": "/images/grand-palace-hotel.jpg",
-  "Green Valley Resort": "/images/green-valley-resort.jpg",
-  "Orchid Boutique Hotel": "/images/orchid-boutique-hotel.jpg",
-  "Skyline Inn": "/images/skyline-inn.jpg",
-  "Sunset Beach Resort": "/images/sunset-beach-resort.jpg",
-};
-
-const fallbackImage = "/images/grand-palace-hotel.jpg";
 const categories = ["All", "Luxury", "Premium", "Budget", "Resort"];
 
 function Hotels() {
@@ -78,11 +64,6 @@ function Hotels() {
 
   const getHotelName = (hotel) =>
     hotel.hotelName || hotel.name || "Hotel";
-
-  const getHotelImage = (hotel) => {
-    const name = getHotelName(hotel);
-    return hotelImages[name] || hotel.imageUrl || fallbackImage;
-  };
 
   const filteredHotels = hotels.filter((hotel) => {
     const name = getHotelName(hotel).toLowerCase();
@@ -273,4 +254,3 @@ function Hotels() {
 }
 
 export default Hotels;
-```

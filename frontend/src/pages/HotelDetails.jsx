@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
+import { getHotelImage, fallbackImage } from '../utils/hotelImages';
 import { useAuth } from '../context/AuthContext';
 import { MapPin, Star, Heart, Calendar, Users, ShieldCheck, MessageSquare, Check, Sparkles, Building } from 'lucide-react';
 
@@ -148,8 +149,12 @@ export const HotelDetails = () => {
       }}>
         <div style={{ height: '320px', position: 'relative', background: '#0f172a' }}>
           <img
-            src={hotel.imageUrl || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80'}
+            src={getHotelImage(hotel)}
             alt={hotel.hotelName}
+            onError={(event) => {
+              event.currentTarget.onerror = null;
+              event.currentTarget.src = fallbackImage;
+            }}
             style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.9 }}
           />
           <div style={{
