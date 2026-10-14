@@ -28,24 +28,38 @@ public class BookingService {
 
     @Transactional
     public Booking createBooking(Booking booking) {
-        validateBooking(booking, null);
+        Room room = validateBooking(booking, null);
 
         if (booking.getStatus() == null || booking.getStatus().isBlank()) {
             booking.setStatus(BookingStatus.PENDING);
         }
 
-        // Auto calculate total amount if not provided or zero
-        if (booking.getTotalAmount() == null || booking.getTotalAmount() <= 0) {
-            long days = ChronoUnit.DAYS.between(booking.getCheckInDate(), booking.getCheckOutDate());
-            if (days <= 0) days = 1;
-            Room room = roomRepository.findById(booking.getRoomId()).orElse(null);
-            double pricePerNight = (room != null && room.getPrice() != null) ? room.getPrice() : 1000.0;
-            booking.setTotalAmount(pricePerNight * days);
-        }
+        // The authoritative price is ALWAYS computed on the server from the
+        // room's real nightly rate and the real number of nights. Any amount the
+        // browser sent is ignored.
+        booking.setTotalAmount(calculateTotal(room, booking.getCheckInDate(), booking.getCheckOutDate()));
 
         Booking saved = bookingRepository.save(booking);
         refreshRoomStatus(saved.getRoomId());
         return saved;
+    }
+
+    /**
+     * Nights between check-in and check-out using the hotel convention: checking
+     * in on the 14th and out on the 16th is two nights.
+     */
+    public static long calculateNights(LocalDate checkIn, LocalDate checkOut) {
+        if (checkIn == null || checkOut == null) {
+            return 0;
+        }
+        long nights = ChronoUnit.DAYS.between(checkIn, checkOut);
+        return Math.max(nights, 0);
+    }
+
+    private double calculateTotal(Room room, LocalDate checkIn, LocalDate checkOut) {
+        long nights = Math.max(calculateNights(checkIn, checkOut), 1);
+        double rate = (room != null && room.getPrice() != null) ? room.getPrice() : 0.0;
+        return Math.round(rate * nights * 100.0) / 100.0;
     }
 
     @Transactional(readOnly = true)

@@ -10,5 +10,7 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Integer> {
 
     List<Invoice> findByPaymentId(Integer paymentId);
 
+    Optional<Invoice> findFirstByPaymentIdOrderByInvoiceIdDesc(Integer paymentId);
+
     Optional<Invoice> findByInvoiceNumber(String invoiceNumber);
 }

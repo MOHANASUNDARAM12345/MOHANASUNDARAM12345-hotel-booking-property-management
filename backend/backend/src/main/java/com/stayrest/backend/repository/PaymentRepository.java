@@ -8,4 +8,6 @@ import java.util.Optional;
 
 public interface PaymentRepository extends JpaRepository<Payment, Integer> {
     List<Payment> findByBookingId(Integer bookingId);
+
+    Optional<Payment> findFirstByBookingIdOrderByPaymentIdDesc(Integer bookingId);
 }
