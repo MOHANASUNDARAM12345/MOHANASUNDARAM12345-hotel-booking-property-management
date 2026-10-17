@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
@@ -11,21 +11,23 @@ export const Login = () => {
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
+  const submittingRef = useRef(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Guard against duplicate submissions (double-click / Enter before the
+    // disabled state has been applied by React).
+    if (submittingRef.current) return;
+    submittingRef.current = true;
     setError('');
     setLoading(true);
 
     try {
+      // The login response already contains the token, email, role and userId,
+      // so no follow-up profile request is needed.
       const response = await api.login({ email, password });
-      let userDetail = null;
-      try {
-        userDetail = await api.getUserByEmail(email);
-      } catch {
-        // Fallback if not found
-      }
-      login(response, userDetail);
+      login(response);
       if (response.role === 'OWNER') {
         navigate('/owner');
       } else {
@@ -34,6 +36,7 @@ export const Login = () => {
     } catch (err) {
       setError(err.message || 'Login failed. Please check your credentials.');
     } finally {
+      submittingRef.current = false;
       setLoading(false);
     }
   };

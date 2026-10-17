@@ -10,6 +10,23 @@ const API_BASE_URL = rawBaseUrl.replace(/\/+$/, '');
 const NETWORK_ERROR_MESSAGE =
   'Unable to reach the server. Please check your internet connection and try again.';
 
+const TIMEOUT_ERROR_MESSAGE =
+  'The server took too long to respond. It may be waking up from an idle state — please try again in a moment.';
+
+// Bound how long any request can hang. Defaults to 60s so the first request
+// after a host cold start (e.g. Render free tier) still has a chance to
+// succeed, while a genuinely stalled connection can never leave the UI
+// spinning forever. Override with VITE_API_TIMEOUT_MS at build time.
+const DEFAULT_TIMEOUT_MS = 60000;
+const parsedTimeout = Number.parseInt(
+  import.meta.env.VITE_API_TIMEOUT_MS,
+  10
+);
+const REQUEST_TIMEOUT_MS =
+  Number.isFinite(parsedTimeout) && parsedTimeout > 0
+    ? parsedTimeout
+    : DEFAULT_TIMEOUT_MS;
+
 const getHeaders = () => {
   const token = localStorage.getItem('token');
   const headers = {
@@ -83,11 +100,37 @@ const handleResponse = async (response) => {
   return rawBody;
 };
 
-const safeFetch = async (url, options) => {
+const safeFetch = async (url, options = {}) => {
+  const { signal: externalSignal, ...rest } = options;
+  const controller = new AbortController();
+  let timedOut = false;
+
+  const timeoutId = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, REQUEST_TIMEOUT_MS);
+
+  if (externalSignal) {
+    if (externalSignal.aborted) {
+      controller.abort();
+    } else {
+      externalSignal.addEventListener(
+        'abort',
+        () => controller.abort(),
+        { once: true }
+      );
+    }
+  }
+
   try {
-    return await fetch(url, options);
-  } catch {
+    return await fetch(url, { ...rest, signal: controller.signal });
+  } catch (err) {
+    if (timedOut || (err && err.name === 'AbortError')) {
+      throw new Error(TIMEOUT_ERROR_MESSAGE);
+    }
     throw new Error(NETWORK_ERROR_MESSAGE);
+  } finally {
+    clearTimeout(timeoutId);
   }
 };
 
@@ -424,7 +467,7 @@ export const api = {
 
   getOwnerAnalytics: async (ownerId) => {
     const url = ownerId ? `${API_BASE_URL}/owner/analytics?ownerId=${ownerId}` : `${API_BASE_URL}/owner/analytics`;
-    const res = await fetch(url, { headers: getHeaders() });
+    const res = await safeFetch(url, { headers: getHeaders() });
     return handleResponse(res);
   },
 

@@ -20,10 +20,14 @@ public class BookingService {
 
     private final BookingRepository bookingRepository;
     private final RoomRepository roomRepository;
+    private final NotificationService notificationService;
 
-    public BookingService(BookingRepository bookingRepository, RoomRepository roomRepository) {
+    public BookingService(BookingRepository bookingRepository,
+                          RoomRepository roomRepository,
+                          NotificationService notificationService) {
         this.bookingRepository = bookingRepository;
         this.roomRepository = roomRepository;
+        this.notificationService = notificationService;
     }
 
     @Transactional
@@ -41,6 +45,7 @@ public class BookingService {
 
         Booking saved = bookingRepository.save(booking);
         refreshRoomStatus(saved.getRoomId());
+        notificationService.notifyBookingPlaced(saved, room);
         return saved;
     }
 
@@ -129,6 +134,12 @@ public class BookingService {
             booking.setStatus(BookingStatus.CANCELLED);
             booking = bookingRepository.save(booking);
             refreshRoomStatus(booking.getRoomId());
+
+            Map<String, Object> refund = calculateRefundEstimate(bookingId);
+            Double refundAmount = (Double) refund.get("refundAmount");
+            Double refundPercentage = (Double) refund.get("refundPercentage");
+            Room room = roomRepository.findById(booking.getRoomId()).orElse(null);
+            notificationService.notifyBookingCancelled(booking, room, refundAmount, refundPercentage);
         }
         return booking;
     }
@@ -144,6 +155,7 @@ public class BookingService {
         booking.setStatus(BookingStatus.COMPLETED);
         booking = bookingRepository.save(booking);
         refreshRoomStatus(booking.getRoomId());
+        notificationService.notifyBookingCompleted(booking);
         return booking;
     }
 
@@ -225,7 +237,7 @@ public class BookingService {
         return result;
     }
 
-    private void validateBooking(Booking booking, Integer currentBookingId) {
+    private Room validateBooking(Booking booking, Integer currentBookingId) {
         if (booking.getCheckInDate() == null || booking.getCheckOutDate() == null) {
             throw new IllegalArgumentException("Check-in and check-out dates are required");
         }
@@ -279,5 +291,7 @@ public class BookingService {
         if (isOverlapping) {
             throw new IllegalArgumentException("Room is already booked for the selected dates");
         }
+
+        return room;
     }
 }

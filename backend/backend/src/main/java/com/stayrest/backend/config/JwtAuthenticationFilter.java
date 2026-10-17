@@ -4,10 +4,13 @@ import com.stayrest.backend.service.CustomUserDetailsService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -23,15 +26,28 @@ import java.nio.charset.StandardCharsets;
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
+    private static final Logger log =
+            LoggerFactory.getLogger(JwtAuthenticationFilter.class);
+
     private final CustomUserDetailsService customUserDetailsService;
 
     @Value("${jwt.secret}")
     private String secret;
 
+    // Derived once at startup instead of on every request.
+    private SecretKey signingKey;
+
     public JwtAuthenticationFilter(
             CustomUserDetailsService customUserDetailsService) {
 
         this.customUserDetailsService = customUserDetailsService;
+    }
+
+    @PostConstruct
+    void initSigningKey() {
+        this.signingKey = Keys.hmacShaKeyFor(
+                secret.getBytes(StandardCharsets.UTF_8)
+        );
     }
 
     @Override
@@ -56,14 +72,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         try {
 
-            // Create secret key
-            SecretKey key = Keys.hmacShaKeyFor(
-                    secret.getBytes(StandardCharsets.UTF_8)
-            );
-
             // Validate and decode JWT
             Claims claims = Jwts.parser()
-                    .verifyWith(key)
+                    .verifyWith(signingKey)
                     .build()
                     .parseSignedClaims(token)
                     .getPayload();
@@ -96,9 +107,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         } catch (Exception e) {
 
-            System.out.println("Invalid JWT token:");
-            e.printStackTrace();
-
+            // Never log the token or the secret. Keep this at debug level so a
+            // flood of expired/invalid tokens cannot fill production logs.
+            log.debug("Rejected JWT on {}: {}", request.getRequestURI(), e.getMessage());
         }
 
         filterChain.doFilter(request, response);

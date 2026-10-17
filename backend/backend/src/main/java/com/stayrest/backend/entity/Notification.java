@@ -1,5 +1,6 @@
 package com.stayrest.backend.entity;
 
+import com.stayrest.backend.constants.NotificationType;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
@@ -15,11 +16,33 @@ public class Notification {
     @Column(name = "user_id", nullable = false)
     private Integer userId;
 
-    @Column(name = "title", nullable = false, length = 100)
+    @Column(name = "title", nullable = false, length = 120)
     private String title;
 
     @Column(name = "message", columnDefinition = "TEXT")
     private String message;
+
+    /**
+     * Category used by the UI filters (see {@link NotificationType}). Stored as
+     * a plain string so legacy rows with other values keep working.
+     */
+    @Column(name = "type", length = 50)
+    private String type;
+
+    /** Relative in-app link the user can follow, e.g. {@code /my-bookings}. */
+    @Column(name = "action_link", length = 255)
+    private String actionLink;
+
+    /** Short call-to-action label shown on the action link. */
+    @Column(name = "action_label", length = 60)
+    private String actionLabel;
+
+    /**
+     * Optional booking this notification refers to. Used to prevent duplicate
+     * scheduled reminders for the same booking.
+     */
+    @Column(name = "related_booking_id")
+    private Integer relatedBookingId;
 
     @Column(name = "is_read")
     private Boolean isRead;
@@ -70,6 +93,38 @@ public class Notification {
 
     public void setMessage(String message) {
         this.message = message;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public String getActionLink() {
+        return actionLink;
+    }
+
+    public void setActionLink(String actionLink) {
+        this.actionLink = actionLink;
+    }
+
+    public String getActionLabel() {
+        return actionLabel;
+    }
+
+    public void setActionLabel(String actionLabel) {
+        this.actionLabel = actionLabel;
+    }
+
+    public Integer getRelatedBookingId() {
+        return relatedBookingId;
+    }
+
+    public void setRelatedBookingId(Integer relatedBookingId) {
+        this.relatedBookingId = relatedBookingId;
     }
 
     public Boolean getIsRead() {

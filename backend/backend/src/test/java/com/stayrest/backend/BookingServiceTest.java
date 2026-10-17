@@ -5,6 +5,7 @@ import com.stayrest.backend.entity.Room;
 import com.stayrest.backend.repository.BookingRepository;
 import com.stayrest.backend.repository.RoomRepository;
 import com.stayrest.backend.service.BookingService;
+import com.stayrest.backend.service.NotificationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,6 +30,9 @@ class BookingServiceTest {
 
     @Mock
     private RoomRepository roomRepository;
+
+    @Mock
+    private NotificationService notificationService;
 
     @InjectMocks
     private BookingService bookingService;

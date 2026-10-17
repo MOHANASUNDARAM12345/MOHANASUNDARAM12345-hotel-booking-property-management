@@ -6,6 +6,7 @@ import com.stayrest.backend.entity.Payment;
 import com.stayrest.backend.repository.BookingRepository;
 import com.stayrest.backend.repository.PaymentRepository;
 import com.stayrest.backend.service.InvoiceService;
+import com.stayrest.backend.service.NotificationService;
 import com.stayrest.backend.service.PaymentService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,6 +32,9 @@ class PaymentServiceTest {
 
     @Mock
     private InvoiceService invoiceService;
+
+    @Mock
+    private NotificationService notificationService;
 
     @InjectMocks
     private PaymentService paymentService;

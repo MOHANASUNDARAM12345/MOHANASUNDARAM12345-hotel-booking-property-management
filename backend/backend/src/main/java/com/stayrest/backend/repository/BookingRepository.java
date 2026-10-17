@@ -17,6 +17,9 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
 
     List<Booking> findByRoomId(Integer roomId);
 
+    /** Used by the scheduled check-in reminder to find stays starting on a day. */
+    List<Booking> findByCheckInDate(LocalDate checkInDate);
+
     /**
      * Finds bookings for a single room that would overlap [checkInDate, checkOutDate).
      * Only bookings that are active (not cancelled / checked out) are considered.

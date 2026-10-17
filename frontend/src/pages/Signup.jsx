@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import { User, Mail, Lock, Phone, AlertCircle, CheckCircle2 } from 'lucide-react';
@@ -13,9 +13,22 @@ export const Signup = () => {
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const submittingRef = useRef(false);
+  const redirectTimerRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (redirectTimerRef.current) {
+        clearTimeout(redirectTimerRef.current);
+      }
+    };
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (submittingRef.current) return;
+    submittingRef.current = true;
     setError('');
     setLoading(true);
 
@@ -28,12 +41,13 @@ export const Signup = () => {
         role,
       });
       setSuccess(true);
-      setTimeout(() => {
+      redirectTimerRef.current = setTimeout(() => {
         navigate('/login');
-      }, 1500);
+      }, 800);
     } catch (err) {
       setError(err.message || 'Registration failed.');
     } finally {
+      submittingRef.current = false;
       setLoading(false);
     }
   };

@@ -18,13 +18,16 @@ public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final BookingRepository bookingRepository;
     private final InvoiceService invoiceService;
+    private final NotificationService notificationService;
 
     public PaymentService(PaymentRepository paymentRepository,
                           BookingRepository bookingRepository,
-                          InvoiceService invoiceService) {
+                          InvoiceService invoiceService,
+                          NotificationService notificationService) {
         this.paymentRepository = paymentRepository;
         this.bookingRepository = bookingRepository;
         this.invoiceService = invoiceService;
+        this.notificationService = notificationService;
     }
 
     public Payment createPayment(Payment payment) {
@@ -66,6 +69,9 @@ public class PaymentService {
         invoice.setTotalAmount(savedPayment.getAmount());
         invoice.setInvoiceNumber("INV-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
         invoiceService.createInvoice(invoice);
+
+        // Notify the guest that their booking is confirmed and payment recorded.
+        notificationService.notifyBookingConfirmed(booking, savedPayment);
 
         return savedPayment;
     }
